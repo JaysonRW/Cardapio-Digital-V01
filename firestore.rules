@@ -85,7 +85,11 @@ service cloud.firestore {
              (!('seoDescription' in request.resource.data) || (request.resource.data.seoDescription is string && request.resource.data.seoDescription.size() <= 500)) &&
              (!('promoBannerImageUrl' in request.resource.data) || (request.resource.data.promoBannerImageUrl is string && request.resource.data.promoBannerImageUrl.size() <= 1000)) &&
              (!('promoBannerIsActive' in request.resource.data) || request.resource.data.promoBannerIsActive is bool) &&
-             (!('promoBannerLink' in request.resource.data) || (request.resource.data.promoBannerLink is string && request.resource.data.promoBannerLink.size() <= 1000));
+             (!('promoBannerLink' in request.resource.data) || (request.resource.data.promoBannerLink is string && request.resource.data.promoBannerLink.size() <= 1000)) &&
+             (!('restaurantName' in request.resource.data) || (request.resource.data.restaurantName is string && request.resource.data.restaurantName.size() <= 200)) &&
+             (!('restaurantHours' in request.resource.data) || (request.resource.data.restaurantHours is string && request.resource.data.restaurantHours.size() <= 200)) &&
+             (!('restaurantAddress' in request.resource.data) || (request.resource.data.restaurantAddress is string && request.resource.data.restaurantAddress.size() <= 500)) &&
+             (!('restaurantPhone' in request.resource.data) || (request.resource.data.restaurantPhone is string && request.resource.data.restaurantPhone.size() <= 50));
     }
 
     // Rules

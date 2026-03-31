@@ -29,6 +29,10 @@ export interface Settings {
   promoBannerImageUrl?: string;
   promoBannerIsActive?: boolean;
   promoBannerLink?: string;
+  restaurantName?: string;
+  restaurantHours?: string;
+  restaurantAddress?: string;
+  restaurantPhone?: string;
 }
 
 export interface CartItem extends Product {

@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { PublicLayout } from './components/PublicLayout';
 import { AdminLayout } from './components/AdminLayout';
+import { Home } from './pages/Home';
 import { Menu } from './pages/Menu';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/admin/Dashboard';
@@ -21,7 +22,8 @@ export default function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<PublicLayout />}>
-                <Route index element={<Menu />} />
+                <Route index element={<Home />} />
+                <Route path="menu" element={<Menu />} />
               </Route>
 
               {/* Auth Route */}

@@ -24,6 +24,10 @@ export function Settings() {
     promoBannerImageUrl: '',
     promoBannerIsActive: false,
     promoBannerLink: '',
+    restaurantName: '',
+    restaurantHours: '',
+    restaurantAddress: '',
+    restaurantPhone: '',
   };
   const [formData, setFormData] = useState(initialForm);
 
@@ -45,6 +49,10 @@ export function Settings() {
           promoBannerImageUrl: data.promoBannerImageUrl || '',
           promoBannerIsActive: data.promoBannerIsActive || false,
           promoBannerLink: data.promoBannerLink || '',
+          restaurantName: data.restaurantName || '',
+          restaurantHours: data.restaurantHours || '',
+          restaurantAddress: data.restaurantAddress || '',
+          restaurantPhone: data.restaurantPhone || '',
         });
       } else {
         setSettings(null);
@@ -155,7 +163,47 @@ export function Settings() {
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Contacto */}
         <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Contacto y Pedidos</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Informações do Restaurante</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Nome do Restaurante</label>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                value={formData.restaurantName} onChange={(e) => setFormData({ ...formData, restaurantName: e.target.value })}
+                placeholder="Ex: ÀUREA Gastronomia"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Horário de Funcionamento</label>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                value={formData.restaurantHours} onChange={(e) => setFormData({ ...formData, restaurantHours: e.target.value })}
+                placeholder="Ex: Ter–Dom · 18h às 00h"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Endereço Completo</label>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                value={formData.restaurantAddress} onChange={(e) => setFormData({ ...formData, restaurantAddress: e.target.value })}
+                placeholder="Ex: Rua das Flores, 123 – Curitiba"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Telefone (Exibição)</label>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                value={formData.restaurantPhone} onChange={(e) => setFormData({ ...formData, restaurantPhone: e.target.value })}
+                placeholder="Ex: (41) 99534-3245"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Número de WhatsApp (con código de país, ej: 5511999999999)</label>
             <input

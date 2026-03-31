@@ -92,6 +92,22 @@
         "seoDescription": {
           "type": "string",
           "description": "SEO Description for the website"
+        },
+        "restaurantName": {
+          "type": "string",
+          "description": "Name of the restaurant"
+        },
+        "restaurantHours": {
+          "type": "string",
+          "description": "Operating hours of the restaurant"
+        },
+        "restaurantAddress": {
+          "type": "string",
+          "description": "Physical address of the restaurant"
+        },
+        "restaurantPhone": {
+          "type": "string",
+          "description": "Phone number for display"
         }
       },
       "required": ["whatsappNumber"]
