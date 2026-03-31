@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, Package, Tags, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, Tags, Settings as SettingsIcon, LogOut, ExternalLink } from 'lucide-react';
 
 export function AdminLayout() {
   const { user, loading, logout } = useAuth();
@@ -16,10 +16,10 @@ export function AdminLayout() {
   }
 
   const navItems = [
-    { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/admin/categories', icon: Tags, label: 'Categorías' },
-    { path: '/admin/products', icon: Package, label: 'Productos' },
-    { path: '/admin/settings', icon: SettingsIcon, label: 'Configuración' },
+    { path: '/admin', icon: LayoutDashboard, label: 'Painel' },
+    { path: '/admin/categories', icon: Tags, label: 'Categorias' },
+    { path: '/admin/products', icon: Package, label: 'Produtos' },
+    { path: '/admin/settings', icon: SettingsIcon, label: 'Configurações' },
   ];
 
   return (
@@ -50,13 +50,21 @@ export function AdminLayout() {
             );
           })}
         </nav>
-        <div className="p-4 border-t">
+        <div className="p-4 border-t space-y-2">
+          <Link
+            to="/"
+            target="_blank"
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 w-full px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            <ExternalLink size={20} />
+            <span>Acessar Site</span>
+          </Link>
           <button
             onClick={logout}
             className="flex items-center space-x-2 text-red-600 hover:text-red-700 w-full px-4 py-2 rounded-md hover:bg-red-50 transition-colors"
           >
             <LogOut size={20} />
-            <span>Cerrar Sesión</span>
+            <span>Sair</span>
           </button>
         </div>
       </aside>
