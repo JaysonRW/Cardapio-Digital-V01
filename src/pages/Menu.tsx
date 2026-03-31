@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { Product, Category, Settings } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { formatCurrency } from '../lib/utils';
-import { ShoppingCart, Plus, Minus, Trash2, Search, Clock, MapPin, Flame } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, Search, Clock, MapPin, Flame, Utensils, Sandwich, Beef, CupSoda, IceCreamCone, UtensilsCrossed, Star } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 export function Menu() {
@@ -24,7 +24,20 @@ export function Menu() {
     notes: ''
   });
   
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  
   const { items, addItem, removeItem, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
+
+  const getCategoryIcon = (name: string) => {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('hamburguer') || lowerName.includes('burger') || lowerName.includes('lanche')) return <Beef size={16} />;
+    if (lowerName.includes('sanduiche') || lowerName.includes('sanduíche')) return <Sandwich size={16} />;
+    if (lowerName.includes('bebida') || lowerName.includes('refri') || lowerName.includes('suco')) return <CupSoda size={16} />;
+    if (lowerName.includes('sobremesa') || lowerName.includes('doce')) return <IceCreamCone size={16} />;
+    if (lowerName.includes('combo') || lowerName.includes('promocao') || lowerName.includes('promoção')) return <Star size={16} />;
+    if (lowerName.includes('acompanhamento') || lowerName.includes('batata')) return <UtensilsCrossed size={16} />;
+    return <Utensils size={16} />;
+  };
 
   useEffect(() => {
     const unsubCats = onSnapshot(query(collection(db, 'categories'), orderBy('order')), (snapshot) => {
@@ -157,8 +170,9 @@ export function Menu() {
         <div className="max-w-4xl mx-auto px-4 py-3 overflow-x-auto hide-scrollbar flex gap-2">
           <button 
             onClick={() => { setActiveCategory('all'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-            className={`whitespace-nowrap px-5 py-2 rounded-full font-medium text-sm transition-colors ${activeCategory === 'all' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`whitespace-nowrap px-5 py-2 rounded-full font-medium text-sm transition-colors flex items-center gap-2 ${activeCategory === 'all' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
           >
+            <Utensils size={16} />
             Todo
           </button>
           {categories.map(category => (
@@ -172,8 +186,9 @@ export function Menu() {
                   window.scrollTo({ top: y, behavior: 'smooth' });
                 }
               }}
-              className={`whitespace-nowrap px-5 py-2 rounded-full font-medium text-sm transition-colors ${activeCategory === category.id ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              className={`whitespace-nowrap px-5 py-2 rounded-full font-medium text-sm transition-colors flex items-center gap-2 ${activeCategory === category.id ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
             >
+              {getCategoryIcon(category.name)}
               {category.name}
             </button>
           ))}
@@ -329,18 +344,58 @@ export function Menu() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {items.map(item => (
-                      <div key={item.id} className="flex justify-between items-center border-b pb-4">
-                        <div className="flex-1 pr-4">
-                          <h4 className="font-medium text-gray-900">{item.name}</h4>
-                          <span className="text-sm text-gray-500">{formatCurrency(item.price)}</span>
+                    <div className="flex justify-end mb-2 relative">
+                      <button 
+                        onClick={() => setShowClearConfirm(true)}
+                        className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1 font-medium transition-colors px-2 py-1 rounded-md hover:bg-red-50"
+                      >
+                        <Trash2 size={16} />
+                        Limpar itens
+                      </button>
+                      {showClearConfirm && (
+                        <div className="absolute right-0 top-8 flex items-center gap-3 bg-red-50 px-3 py-1.5 rounded-md shadow-md border border-red-100 z-10">
+                          <span className="text-sm text-red-800 font-medium">Esvaziar carrinho?</span>
+                          <button 
+                            onClick={() => { clearCart(); setShowClearConfirm(false); }} 
+                            className="text-sm bg-red-500 text-white px-2 py-0.5 rounded font-bold hover:bg-red-600"
+                          >
+                            Sim
+                          </button>
+                          <button 
+                            onClick={() => setShowClearConfirm(false)} 
+                            className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+                          >
+                            Não
+                          </button>
                         </div>
-                        <div className="flex items-center gap-3 bg-gray-100 rounded-full px-2 py-1">
-                          <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="text-gray-600 hover:text-gray-900 p-1">
+                      )}
+                    </div>
+                    {items.map(item => (
+                      <div key={item.id} className="flex items-center gap-4 border-b pb-4">
+                        {/* Imagem do item */}
+                        <div className="w-16 h-16 flex-none bg-gray-100 rounded-xl overflow-hidden shadow-sm">
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                              <ShoppingCart size={20} />
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Detalhes do item */}
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900 text-sm leading-tight mb-1">{item.name}</h4>
+                          <span className="text-orange-500 font-bold text-sm">{formatCurrency(item.price)}</span>
+                        </div>
+                        
+                        {/* Controles de quantidade */}
+                        <div className="flex items-center gap-3 bg-gray-100 rounded-full px-2 py-1 flex-none">
+                          <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="text-gray-600 hover:text-gray-900 p-1 transition-colors">
                             {item.quantity === 1 ? <Trash2 size={16} className="text-red-500" /> : <Minus size={16} />}
                           </button>
-                          <span className="font-medium w-4 text-center">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="text-gray-600 hover:text-gray-900 p-1">
+                          <span className="font-medium w-4 text-center text-sm">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="text-gray-600 hover:text-gray-900 p-1 transition-colors">
                             <Plus size={16} />
                           </button>
                         </div>
