@@ -128,7 +128,7 @@ export function Menu() {
 
   return (
     <div className="pb-24">
-      {/* Banner */}
+      {/* Banner Principal (Hero) */}
       {settings?.bannerIsActive && (
         <div 
           className="relative bg-gray-900 h-64 sm:h-80 flex items-center justify-center text-center px-4"
@@ -143,6 +143,21 @@ export function Menu() {
             <h1 className="text-3xl sm:text-5xl font-bold text-white mb-4">{settings.bannerTitle || 'Nuestro Menú'}</h1>
             <p className="text-lg sm:text-xl text-gray-200">{settings.bannerSubtitle}</p>
           </div>
+        </div>
+      )}
+
+      {/* Banner de Promoción */}
+      {settings?.promoBannerIsActive && settings?.promoBannerImageUrl && (
+        <div className="max-w-4xl mx-auto px-4 mt-8 mb-4">
+          {settings.promoBannerLink ? (
+            <a href={settings.promoBannerLink} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+              <img src={settings.promoBannerImageUrl} alt="Promoción Especial" className="w-full h-auto object-cover max-h-64 sm:max-h-80" />
+            </a>
+          ) : (
+            <div className="overflow-hidden rounded-2xl shadow-md">
+              <img src={settings.promoBannerImageUrl} alt="Promoción Especial" className="w-full h-auto object-cover max-h-64 sm:max-h-80" />
+            </div>
+          )}
         </div>
       )}
 

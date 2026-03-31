@@ -20,6 +20,9 @@ export function Settings() {
     googleTagId: '',
     seoTitle: '',
     seoDescription: '',
+    promoBannerImageUrl: '',
+    promoBannerIsActive: false,
+    promoBannerLink: '',
   };
   const [formData, setFormData] = useState(initialForm);
 
@@ -38,6 +41,9 @@ export function Settings() {
           googleTagId: data.googleTagId || '',
           seoTitle: data.seoTitle || '',
           seoDescription: data.seoDescription || '',
+          promoBannerImageUrl: data.promoBannerImageUrl || '',
+          promoBannerIsActive: data.promoBannerIsActive || false,
+          promoBannerLink: data.promoBannerLink || '',
         });
       } else {
         setSettings(null);
@@ -82,10 +88,10 @@ export function Settings() {
           </div>
         </div>
 
-        {/* Banner Promocional */}
+        {/* Banner Principal (Hero) */}
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex justify-between items-center border-b pb-2 mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Banner Promocional</h2>
+            <h2 className="text-lg font-medium text-gray-900">Banner Principal (Hero)</h2>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -119,6 +125,43 @@ export function Settings() {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
                 value={formData.bannerImageUrl} onChange={(e) => setFormData({ ...formData, bannerImageUrl: e.target.value })}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Banner de Promoción (Catálogo) */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="flex justify-between items-center border-b pb-2 mb-4">
+            <h2 className="text-lg font-medium text-gray-900">Banner de Promoción (Catálogo)</h2>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.promoBannerIsActive} onChange={(e) => setFormData({ ...formData, promoBannerIsActive: e.target.checked })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Activar Banner de Promoción</span>
+            </label>
+          </div>
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">URL de la Imagen Promocional</label>
+              <input
+                type="url"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                value={formData.promoBannerImageUrl} onChange={(e) => setFormData({ ...formData, promoBannerImageUrl: e.target.value })}
+                placeholder="https://ejemplo.com/imagen-promo.jpg"
+              />
+              <p className="mt-1 text-sm text-gray-500">Se mostrará justo debajo del banner principal en el catálogo.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Enlace (Opcional)</label>
+              <input
+                type="url"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                value={formData.promoBannerLink} onChange={(e) => setFormData({ ...formData, promoBannerLink: e.target.value })}
+                placeholder="https://wa.me/... o https://tu-sitio.com/promo"
+              />
+              <p className="mt-1 text-sm text-gray-500">Si agregas un enlace, la imagen será clickeable.</p>
             </div>
           </div>
         </div>

@@ -82,7 +82,10 @@ service cloud.firestore {
              (!('metaPixelId' in request.resource.data) || (request.resource.data.metaPixelId is string && request.resource.data.metaPixelId.size() <= 100)) &&
              (!('googleTagId' in request.resource.data) || (request.resource.data.googleTagId is string && request.resource.data.googleTagId.size() <= 100)) &&
              (!('seoTitle' in request.resource.data) || (request.resource.data.seoTitle is string && request.resource.data.seoTitle.size() <= 200)) &&
-             (!('seoDescription' in request.resource.data) || (request.resource.data.seoDescription is string && request.resource.data.seoDescription.size() <= 500));
+             (!('seoDescription' in request.resource.data) || (request.resource.data.seoDescription is string && request.resource.data.seoDescription.size() <= 500)) &&
+             (!('promoBannerImageUrl' in request.resource.data) || (request.resource.data.promoBannerImageUrl is string && request.resource.data.promoBannerImageUrl.size() <= 1000)) &&
+             (!('promoBannerIsActive' in request.resource.data) || request.resource.data.promoBannerIsActive is bool) &&
+             (!('promoBannerLink' in request.resource.data) || (request.resource.data.promoBannerLink is string && request.resource.data.promoBannerLink.size() <= 1000));
     }
 
     // Rules

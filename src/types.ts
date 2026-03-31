@@ -26,6 +26,9 @@ export interface Settings {
   googleTagId?: string;
   seoTitle?: string;
   seoDescription?: string;
+  promoBannerImageUrl?: string;
+  promoBannerIsActive?: boolean;
+  promoBannerLink?: string;
 }
 
 export interface CartItem extends Product {
