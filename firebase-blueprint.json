@@ -1,0 +1,114 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "A product category (e.g., Hamburgers, Drinks)",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the category"
+        },
+        "order": {
+          "type": "number",
+          "description": "Display order"
+        }
+      },
+      "required": ["name", "order"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A menu item",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the product"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the product"
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the product image"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "ID of the category this product belongs to"
+        },
+        "isPromotion": {
+          "type": "boolean",
+          "description": "Whether the product is currently on promotion"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether the product is visible on the menu"
+        }
+      },
+      "required": ["name", "price", "categoryId", "isActive"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Global application settings (singleton)",
+      "type": "object",
+      "properties": {
+        "whatsappNumber": {
+          "type": "string",
+          "description": "WhatsApp number for orders"
+        },
+        "bannerTitle": {
+          "type": "string",
+          "description": "Title for the promotional banner"
+        },
+        "bannerSubtitle": {
+          "type": "string",
+          "description": "Subtitle for the promotional banner"
+        },
+        "bannerImageUrl": {
+          "type": "string",
+          "description": "Background image URL for the banner"
+        },
+        "bannerIsActive": {
+          "type": "boolean",
+          "description": "Whether the banner is visible"
+        },
+        "metaPixelId": {
+          "type": "string",
+          "description": "Meta Pixel ID for tracking"
+        },
+        "googleTagId": {
+          "type": "string",
+          "description": "Google Tag ID for tracking"
+        },
+        "seoTitle": {
+          "type": "string",
+          "description": "SEO Title for the website"
+        },
+        "seoDescription": {
+          "type": "string",
+          "description": "SEO Description for the website"
+        }
+      },
+      "required": ["whatsappNumber"]
+    }
+  },
+  "firestore": {
+    "categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Stores product categories"
+    },
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Stores menu products"
+    },
+    "settings/{settingId}": {
+      "schema": "Settings",
+      "description": "Stores global settings (usually document ID 'general')"
+    }
+  }
+}

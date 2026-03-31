@@ -1,0 +1,5 @@
+{
+  "name": "Cardápio Digital",
+  "description": "Um cardápio digital leve e rápido, com integração direta para pedidos via WhatsApp e painel administrativo completo.",
+  "requestFramePermissions": []
+}

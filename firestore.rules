@@ -1,0 +1,110 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: categories
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required)
+    //   - order: number (required)
+    //
+    // Collection: products
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required)
+    //   - description: string (optional)
+    //   - price: number (required)
+    //   - imageUrl: string (optional)
+    //   - categoryId: string (required)
+    //   - isPromotion: boolean (optional)
+    //   - isActive: boolean (required)
+    //
+    // Collection: settings
+    // Document ID: 'general'
+    // Fields:
+    //   - whatsappNumber: string (required)
+    //   - bannerTitle: string (optional)
+    //   - bannerSubtitle: string (optional)
+    //   - bannerImageUrl: string (optional)
+    //   - bannerIsActive: boolean (optional)
+    //   - metaPixelId: string (optional)
+    //   - googleTagId: string (optional)
+    //   - seoTitle: string (optional)
+    //   - seoDescription: string (optional)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "propagoumkd@gmail.com" && request.auth.token.email_verified == true) ||
+        (request.auth.token.email == "adm01@admin.com")
+      );
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Domain Validators
+    function isValidCategory() {
+      return hasRequiredFields(['name', 'order']) &&
+             request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 100 &&
+             request.resource.data.order is number;
+    }
+
+    function isValidProduct() {
+      return hasRequiredFields(['name', 'price', 'categoryId', 'isActive']) &&
+             request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 150 &&
+             request.resource.data.price is number && request.resource.data.price >= 0 &&
+             request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0 &&
+             request.resource.data.isActive is bool &&
+             (!('description' in request.resource.data) || (request.resource.data.description is string && request.resource.data.description.size() <= 1000)) &&
+             (!('imageUrl' in request.resource.data) || (request.resource.data.imageUrl is string && request.resource.data.imageUrl.size() <= 1000)) &&
+             (!('isPromotion' in request.resource.data) || request.resource.data.isPromotion is bool);
+    }
+
+    function isValidSettings() {
+      return hasRequiredFields(['whatsappNumber']) &&
+             request.resource.data.whatsappNumber is string && request.resource.data.whatsappNumber.size() > 0 && request.resource.data.whatsappNumber.size() < 50 &&
+             (!('bannerTitle' in request.resource.data) || (request.resource.data.bannerTitle is string && request.resource.data.bannerTitle.size() <= 200)) &&
+             (!('bannerSubtitle' in request.resource.data) || (request.resource.data.bannerSubtitle is string && request.resource.data.bannerSubtitle.size() <= 500)) &&
+             (!('bannerImageUrl' in request.resource.data) || (request.resource.data.bannerImageUrl is string && request.resource.data.bannerImageUrl.size() <= 1000)) &&
+             (!('bannerIsActive' in request.resource.data) || request.resource.data.bannerIsActive is bool) &&
+             (!('metaPixelId' in request.resource.data) || (request.resource.data.metaPixelId is string && request.resource.data.metaPixelId.size() <= 100)) &&
+             (!('googleTagId' in request.resource.data) || (request.resource.data.googleTagId is string && request.resource.data.googleTagId.size() <= 100)) &&
+             (!('seoTitle' in request.resource.data) || (request.resource.data.seoTitle is string && request.resource.data.seoTitle.size() <= 200)) &&
+             (!('seoDescription' in request.resource.data) || (request.resource.data.seoDescription is string && request.resource.data.seoDescription.size() <= 500));
+    }
+
+    // Rules
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidCategory();
+      allow update: if isAdmin() && isValidCategory();
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidProduct();
+      allow update: if isAdmin() && isValidProduct();
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidSettings();
+      allow update: if isAdmin() && isValidSettings();
+      allow delete: if isAdmin();
+    }
+  }
+}
