@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Product, Category, Settings } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { formatCurrency } from '../lib/utils';
-import { ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, Search, Clock, MapPin, Flame } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 export function Menu() {
@@ -14,6 +14,8 @@ export function Menu() {
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckout, setIsCheckout] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     orderType: 'delivery',
@@ -126,29 +128,75 @@ export function Menu() {
     );
   }
 
+  const promotedProducts = products.filter(p => p.isPromotion);
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
-    <div className="pb-24">
-      {/* Banner Principal (Hero) */}
-      {settings?.bannerIsActive && (
-        <div 
-          className="relative bg-gray-900 h-64 sm:h-80 flex items-center justify-center text-center px-4"
-          style={{
-            backgroundImage: settings.bannerImageUrl ? `url(${settings.bannerImageUrl})` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <div className="absolute inset-0 bg-black/50"></div>
-          <div className="relative z-10 max-w-2xl mx-auto">
-            <h1 className="text-3xl sm:text-5xl font-bold text-white mb-4">{settings.bannerTitle || 'Nuestro Menú'}</h1>
-            <p className="text-lg sm:text-xl text-gray-200">{settings.bannerSubtitle}</p>
+    <div className="pb-24 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <header className="bg-white pt-6 pb-4 px-4 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
+          <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+            {settings?.bannerTitle ? settings.bannerTitle.charAt(0).toUpperCase() : 'B'}
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{settings?.bannerTitle || 'Burger House'}</h1>
+            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+              <span className="flex items-center gap-1"><Clock size={12} /> Lun-Dom 11:00-23:00</span>
+              <span className="flex items-center gap-1"><MapPin size={12} /> Av. Principal 1234</span>
+            </div>
           </div>
         </div>
-      )}
+      </header>
 
-      {/* Banner de Promoción */}
-      {settings?.promoBannerIsActive && settings?.promoBannerImageUrl && (
-        <div className="max-w-4xl mx-auto px-4 mt-8 mb-4">
+      {/* Sticky Category Navigation */}
+      <div className="bg-white border-b border-gray-100 sticky top-[88px] z-20 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3 overflow-x-auto hide-scrollbar flex gap-2">
+          <button 
+            onClick={() => { setActiveCategory('all'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            className={`whitespace-nowrap px-5 py-2 rounded-full font-medium text-sm transition-colors ${activeCategory === 'all' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Todo
+          </button>
+          {categories.map(category => (
+            <button 
+              key={category.id}
+              onClick={() => { 
+                setActiveCategory(category.id);
+                const el = document.getElementById(`category-${category.id}`);
+                if (el) {
+                  const y = el.getBoundingClientRect().top + window.scrollY - 140;
+                  window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+              }}
+              className={`whitespace-nowrap px-5 py-2 rounded-full font-medium text-sm transition-colors ${activeCategory === category.id ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="max-w-4xl mx-auto px-4 mt-6">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <input 
+            type="text" 
+            placeholder="Buscar en el menú..." 
+            className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Banner de Promoción (Hero) */}
+      {!searchQuery && settings?.promoBannerIsActive && settings?.promoBannerImageUrl && (
+        <div className="max-w-4xl mx-auto px-4 mt-6">
           {settings.promoBannerLink ? (
             <a href={settings.promoBannerLink} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow">
               <img src={settings.promoBannerImageUrl} alt="Promoción Especial" className="w-full h-auto object-cover max-h-64 sm:max-h-80" />
@@ -161,47 +209,77 @@ export function Menu() {
         </div>
       )}
 
+      {/* Destacados (Highlights) */}
+      {!searchQuery && promotedProducts.length > 0 && (
+        <div className="max-w-4xl mx-auto px-4 mt-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Flame className="text-orange-500" size={20} /> Destacados
+          </h2>
+          <div className="flex overflow-x-auto gap-4 pb-4 hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+            {promotedProducts.map(product => (
+              <div key={`promo-${product.id}`} className="min-w-[160px] max-w-[160px] flex-none cursor-pointer" onClick={() => addItem(product)}>
+                <div className="relative h-40 rounded-2xl overflow-hidden mb-3 shadow-sm">
+                   <img src={product.imageUrl || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80'} alt={product.name} className="w-full h-full object-cover" />
+                   <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md">PROMO</span>
+                </div>
+                <h3 className="font-medium text-gray-900 text-sm leading-tight mb-1 line-clamp-2">{product.name}</h3>
+                <p className="text-orange-500 font-bold">{formatCurrency(product.price)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Menu Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {categories.map(category => {
-          const categoryProducts = products.filter(p => p.categoryId === category.id);
+          const categoryProducts = filteredProducts.filter(p => p.categoryId === category.id);
           if (categoryProducts.length === 0) return null;
 
           return (
-            <div key={category.id} className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b pb-2">{category.name}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div key={category.id} id={`category-${category.id}`} className="mb-10 scroll-mt-36">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">{category.name}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {categoryProducts.map(product => (
-                  <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col sm:flex-row hover:shadow-md transition-shadow">
-                    {product.imageUrl && (
-                      <div className="sm:w-1/3 h-48 sm:h-auto">
-                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                  <div 
+                    key={product.id} 
+                    onClick={() => addItem(product)}
+                    className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-base mb-1 leading-tight">{product.name}</h3>
+                        <p className="text-gray-500 text-sm line-clamp-2 mb-2">{product.description}</p>
                       </div>
-                    )}
-                    <div className="p-4 flex-1 flex flex-col">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-bold text-gray-900">{product.name}</h3>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-orange-500 font-bold text-lg">{formatCurrency(product.price)}</span>
                         {product.isPromotion && (
-                          <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">Promo</span>
+                          <>
+                            <span className="text-gray-400 text-xs line-through">{formatCurrency(product.price * 1.2)}</span>
+                            <span className="bg-red-100 text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">-20%</span>
+                          </>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 mb-4 flex-1">{product.description}</p>
-                      <div className="flex justify-between items-center mt-auto">
-                        <span className="text-lg font-bold text-gray-900">{formatCurrency(product.price)}</span>
-                        <button
-                          onClick={() => addItem(product)}
-                          className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
-                        >
-                          <Plus size={16} /> Agregar
-                        </button>
-                      </div>
                     </div>
+                    {product.imageUrl && (
+                      <div className="w-28 h-28 flex-none relative">
+                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover rounded-xl" />
+                        {product.isPromotion && (
+                          <span className="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">PROMO</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           );
         })}
+        {filteredProducts.length === 0 && searchQuery && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No se encontraron productos para "{searchQuery}"</p>
+          </div>
+        )}
       </div>
 
       {/* Floating Cart Button */}
