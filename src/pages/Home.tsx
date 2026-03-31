@@ -37,6 +37,11 @@ export function Home() {
   const restaurantAddress = settings?.restaurantAddress || 'Rua das Flores, 123 – Curitiba';
   const restaurantPhone = settings?.restaurantPhone || '(41) 99534-3245';
   const whatsappNumber = settings?.whatsappNumber || '';
+  
+  const heroSubtitle = settings?.heroSubtitle || 'Gastronomia';
+  const heroDescription = settings?.heroDescription || 'Uma experiência sensorial que celebra a arte culinária com ingredientes locais e técnicas contemporâneas.';
+  const heroImageUrl = settings?.heroImageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2069&auto=format&fit=crop';
+  const footerDescription = settings?.footerDescription || 'Gastronomia autoral que celebra ingredientes locais com técnicas contemporâneas.';
 
   const handleWhatsAppClick = () => {
     if (!whatsappNumber) return;
@@ -62,7 +67,7 @@ export function Home() {
       <section className="relative flex-1 flex items-center justify-center min-h-[80vh]">
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2069&auto=format&fit=crop" 
+            src={heroImageUrl} 
             alt="Gastronomia" 
             className="w-full h-full object-cover opacity-40"
             referrerPolicy="no-referrer"
@@ -77,10 +82,10 @@ export function Home() {
               {restaurantName}
             </h1>
             <h2 className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 leading-tight">
-              Gastronomia
+              {heroSubtitle}
             </h2>
             <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-lg leading-relaxed">
-              Uma experiência sensorial que celebra a arte culinária com ingredientes locais e técnicas contemporâneas.
+              {heroDescription}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
@@ -130,7 +135,7 @@ export function Home() {
               {restaurantName.toUpperCase()}
             </h2>
             <p className="text-gray-400 leading-relaxed max-w-sm">
-              Gastronomia autoral que celebra ingredientes locais com técnicas contemporâneas.
+              {footerDescription}
             </p>
           </div>
           

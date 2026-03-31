@@ -28,6 +28,10 @@ export function Settings() {
     restaurantHours: '',
     restaurantAddress: '',
     restaurantPhone: '',
+    heroSubtitle: '',
+    heroDescription: '',
+    heroImageUrl: '',
+    footerDescription: '',
   };
   const [formData, setFormData] = useState(initialForm);
 
@@ -53,6 +57,10 @@ export function Settings() {
           restaurantHours: data.restaurantHours || '',
           restaurantAddress: data.restaurantAddress || '',
           restaurantPhone: data.restaurantPhone || '',
+          heroSubtitle: data.heroSubtitle || '',
+          heroDescription: data.heroDescription || '',
+          heroImageUrl: data.heroImageUrl || '',
+          footerDescription: data.footerDescription || '',
         });
       } else {
         setSettings(null);
@@ -216,10 +224,54 @@ export function Settings() {
           </div>
         </div>
 
-        {/* Banner Principal (Hero) */}
+        {/* Página Inicial (Home) */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Página Inicial (Home)</h2>
+          
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Subtítulo (Hero)</label>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                value={formData.heroSubtitle} onChange={(e) => setFormData({ ...formData, heroSubtitle: e.target.value })}
+                placeholder="Ex: Gastronomia"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Descrição (Hero)</label>
+              <textarea
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                rows={3}
+                value={formData.heroDescription} onChange={(e) => setFormData({ ...formData, heroDescription: e.target.value })}
+                placeholder="Ex: Uma experiência sensorial que celebra a arte culinária..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">URL da Imagem de Fundo (Hero)</label>
+              <input
+                type="text"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                value={formData.heroImageUrl} onChange={(e) => setFormData({ ...formData, heroImageUrl: e.target.value })}
+                placeholder="https://exemplo.com/imagem.jpg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Descrição do Rodapé</label>
+              <textarea
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                rows={2}
+                value={formData.footerDescription} onChange={(e) => setFormData({ ...formData, footerDescription: e.target.value })}
+                placeholder="Ex: Gastronomia autoral que celebra ingredientes locais..."
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Banner Principal (Hero) - Antigo, usado no Menu */}
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex justify-between items-center border-b pb-2 mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Banner Principal (Hero)</h2>
+            <h2 className="text-lg font-medium text-gray-900">Banner do Cardápio</h2>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"

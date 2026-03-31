@@ -33,6 +33,10 @@ export interface Settings {
   restaurantHours?: string;
   restaurantAddress?: string;
   restaurantPhone?: string;
+  heroSubtitle?: string;
+  heroDescription?: string;
+  heroImageUrl?: string;
+  footerDescription?: string;
 }
 
 export interface CartItem extends Product {

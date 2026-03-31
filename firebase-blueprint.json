@@ -108,6 +108,22 @@
         "restaurantPhone": {
           "type": "string",
           "description": "Phone number for display"
+        },
+        "heroSubtitle": {
+          "type": "string",
+          "description": "Subtitle for the hero section"
+        },
+        "heroDescription": {
+          "type": "string",
+          "description": "Description for the hero section"
+        },
+        "heroImageUrl": {
+          "type": "string",
+          "description": "Background image URL for the hero section"
+        },
+        "footerDescription": {
+          "type": "string",
+          "description": "Short description for the footer"
         }
       },
       "required": ["whatsappNumber"]
