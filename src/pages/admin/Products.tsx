@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import { Product, Category } from '../../types';
 import { Plus, Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
+import { ImageUpload } from '../../components/ImageUpload';
 
 export function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -67,7 +68,7 @@ export function Products() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar este producto?')) {
+    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
       try {
         await deleteDoc(doc(db, 'products', id));
       } catch (error) {
@@ -76,92 +77,96 @@ export function Products() {
     }
   };
 
-  if (loading) return <div>Cargando...</div>;
+  if (loading) return <div className="text-zinc-500 animate-pulse">Carregando...</div>;
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Productos</h1>
+    <div className="max-w-6xl">
+      <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">Produtos</h1>
+      <p className="text-zinc-500 mb-8">Gerencie os itens do seu cardápio, preços e disponibilidade.</p>
       
-      <div className="bg-white shadow rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-medium mb-4">{isEditing ? 'Editar Producto' : 'Nuevo Producto'}</h2>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-6 mb-8">
+        <h2 className="text-lg font-semibold text-zinc-900 mb-6">{isEditing ? 'Editar Produto' : 'Novo Produto'}</h2>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nombre</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">Nome</label>
             <input
               type="text" required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+              className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
               value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Ex: X-Salada"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Categoría</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">Categoria</label>
             <select
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+              className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
               value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
             >
-              <option value="">Seleccione una categoría...</option>
+              <option value="">Selecione uma categoria...</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Precio ($)</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">Preço (R$)</label>
             <input
               type="number" step="0.01" required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+              className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
               value={formData.price} onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">URL de la Imagen</label>
-            <input
-              type="url"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-              value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              placeholder="0.00"
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Descripción</label>
-            <textarea
-              rows={2}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-              value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            <ImageUpload 
+              value={formData.imageUrl} 
+              onChange={(url) => setFormData({ ...formData, imageUrl: url })} 
+              label="Imagem do Produto"
+              folder="products"
             />
           </div>
-          <div className="flex items-center gap-4 mt-2">
-            <label className="flex items-center gap-2">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">Descrição</label>
+            <textarea
+              rows={2}
+              className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
+              value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Descreva os ingredientes..."
+            />
+          </div>
+          <div className="flex items-center gap-6 mt-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-zinc-300 text-orange-500 focus:ring-orange-500"
               />
-              <span className="text-sm text-gray-700">Activo</span>
+              <span className="text-sm font-medium text-zinc-700">Ativo no cardápio</span>
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.isPromotion} onChange={(e) => setFormData({ ...formData, isPromotion: e.target.checked })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-zinc-300 text-orange-500 focus:ring-orange-500"
               />
-              <span className="text-sm text-gray-700">En Promoción</span>
+              <span className="text-sm font-medium text-zinc-700">Destacar como Promoção</span>
             </label>
           </div>
-          <div className="md:col-span-2 flex justify-end gap-2 mt-4">
+          <div className="md:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-zinc-100">
             {isEditing && (
               <button
                 type="button"
                 onClick={() => { setIsEditing(null); setFormData(initialForm); }}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+                className="bg-zinc-100 text-zinc-700 px-5 py-2.5 rounded-lg hover:bg-zinc-200 transition-colors font-medium text-sm"
               >
                 Cancelar
               </button>
             )}
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+              className="bg-orange-500 text-white px-5 py-2.5 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 font-medium text-sm"
             >
-              {isEditing ? <Edit2 size={18} /> : <Plus size={18} />}
-              {isEditing ? 'Actualizar' : 'Añadir Producto'}
+              {isEditing ? <Edit2 size={16} /> : <Plus size={16} />}
+              {isEditing ? 'Salvar Alterações' : 'Adicionar Produto'}
             </button>
           </div>
         </form>
@@ -169,31 +174,31 @@ export function Products() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
-          <div key={product.id} className={`bg-white shadow rounded-lg overflow-hidden border ${!product.isActive ? 'opacity-60' : ''}`}>
+          <div key={product.id} className={`bg-white border border-zinc-200 shadow-sm rounded-xl overflow-hidden hover:shadow-md transition-all ${!product.isActive ? 'opacity-60 grayscale-[50%]' : ''}`}>
             {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover" />
+              <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover border-b border-zinc-100" />
             ) : (
-              <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-400">
-                <ImageIcon size={48} />
+              <div className="w-full h-48 bg-zinc-50 flex items-center justify-center text-zinc-300 border-b border-zinc-100">
+                <ImageIcon size={40} />
               </div>
             )}
-            <div className="p-4">
-              <div className="flex justify-between items-start">
-                <h3 className="text-lg font-bold text-gray-900">{product.name}</h3>
-                <span className="font-bold text-blue-600">${product.price.toFixed(2)}</span>
+            <div className="p-5">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-lg font-bold text-zinc-900 leading-tight">{product.name}</h3>
+                <span className="font-bold text-orange-500 ml-2 whitespace-nowrap">R$ {product.price.toFixed(2)}</span>
               </div>
-              <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product.description}</p>
-              <div className="mt-4 flex justify-between items-center">
-                <div className="flex gap-2">
-                  {product.isPromotion && <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">Promo</span>}
-                  <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">{categories.find(c => c.id === product.categoryId)?.name || 'Sin categoría'}</span>
+              <p className="text-sm text-zinc-500 mb-4 line-clamp-2 min-h-[40px]">{product.description}</p>
+              <div className="flex justify-between items-center pt-4 border-t border-zinc-100">
+                <div className="flex flex-wrap gap-2">
+                  {product.isPromotion && <span className="px-2 py-1 bg-red-50 text-red-600 border border-red-100 text-[10px] uppercase font-bold rounded-md tracking-wider">Promo</span>}
+                  <span className="px-2 py-1 bg-zinc-100 text-zinc-600 text-[10px] uppercase font-bold rounded-md tracking-wider">{categories.find(c => c.id === product.categoryId)?.name || 'Sem categoria'}</span>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-900 p-1">
-                    <Edit2 size={18} />
+                <div className="flex gap-1">
+                  <button onClick={() => handleEdit(product)} className="text-zinc-400 hover:text-orange-500 transition-colors p-1.5 rounded-md hover:bg-orange-50">
+                    <Edit2 size={16} />
                   </button>
-                  <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900 p-1">
-                    <Trash2 size={18} />
+                  <button onClick={() => handleDelete(product.id)} className="text-zinc-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50">
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

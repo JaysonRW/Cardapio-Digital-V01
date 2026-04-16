@@ -19,6 +19,7 @@ export default defineConfig(({mode}) => {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
+      allowedHosts: ['.ngrok-free.app', '2773-2804-d55-5e55-be00-d48a-5615-819f-46d1.ngrok-free.app'],
     },
   };
 });

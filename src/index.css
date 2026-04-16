@@ -1,7 +1,278 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Cormorant Garamond", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+:root {
+  --primary: #f97316;
+  --primary-strong: #ea580c;
+  --primary-soft: #fff7ed;
+  --primary-soft-border: #fed7aa;
+  --primary-foreground: #ffffff;
+  --primary-opacity: 0.12;
+  --primary-shadow-opacity: 0.16;
+
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-strong: #fbfbfc;
+  --surface-inverse: #18181b;
+  --text: #18181b;
+  --text-inverse: #ffffff;
+  --muted: #71717a;
+  --border: #e5e7eb;
+  --border-strong: #d4d7dd;
+  --success: #059669;
+  --danger: #dc2626;
+  --focus-ring: #fdba74;
+  --shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+
+  --color-orange-50: var(--primary-soft);
+  --color-orange-100: color-mix(in srgb, var(--primary-soft) 65%, white);
+  --color-orange-300: var(--primary-soft-border);
+  --color-orange-400: color-mix(in srgb, var(--primary) 88%, white);
+  --color-orange-500: var(--primary);
+  --color-orange-600: var(--primary-strong);
+
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #27272a;
+  --color-zinc-900: #18181b;
+  --color-zinc-950: #09090b;
+
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+* {
+  scrollbar-color: var(--primary-soft-border) transparent;
+}
+
+::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.theme-app {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.theme-surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.theme-surface-strong {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+}
+
+.theme-inverse-surface {
+  background: var(--surface-inverse);
+  border: 1px solid color-mix(in srgb, var(--surface-inverse) 78%, white);
+  color: var(--text-inverse);
+}
+
+.theme-muted-text {
+  color: var(--muted);
+}
+
+.theme-primary-text {
+  color: var(--primary);
+}
+
+.theme-link {
+  color: var(--primary);
+  transition: color 150ms ease;
+}
+
+.theme-link:hover {
+  color: var(--primary-strong);
+}
+
+.theme-primary-button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+  box-shadow: 0 18px 40px -18px color-mix(in srgb, var(--primary) 70%, transparent);
+}
+
+.theme-primary-button:hover {
+  background: var(--primary-strong);
+}
+
+.theme-secondary-button {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.theme-secondary-button:hover {
+  background: var(--surface-strong);
+  border-color: var(--primary-soft-border);
+  color: var(--primary-strong);
+}
+
+.theme-ghost-button {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.theme-ghost-button:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary-soft-border);
+  color: var(--primary-strong);
+}
+
+.theme-pill {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  border: 1px solid var(--primary-soft-border);
+}
+
+.theme-active-chip {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  border: 1px solid var(--primary-soft-border);
+}
+
+.theme-input {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.theme-input::placeholder {
+  color: var(--muted);
+}
+
+.theme-input:focus,
+.theme-input:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 35%, transparent);
+}
+
+.theme-divider {
+  border-color: var(--border);
+}
+
+.theme-shadow-soft {
+  box-shadow: var(--shadow);
+}
+
+.theme-acai {
+  --theme-primary-base: #7c3aed;
+}
+
+.theme-cafe {
+  --theme-primary-base: #6b4f3b;
+}
+
+.theme-pastel {
+  --theme-primary-base: #f59e0b;
+}
+
+.theme-burguer {
+  --theme-primary-base: #ef4444;
+}
+
+.theme-marmita {
+  --theme-primary-base: #10b981;
+}
+
+.theme-restaurant {
+  --theme-primary-base: #f97316;
+}
+
+.theme-sushi {
+  --theme-primary-base: #0f172a;
+}
+
+.theme-vegan {
+  --theme-primary-base: #22c55e;
+}
+
+.theme-churrasco {
+  --theme-primary-base: #7f1d1d;
+}
+
+.theme-pizza {
+  --theme-primary-base: #dc2626;
+}
+
+.theme-doceria {
+  --theme-primary-base: #ec4899;
+}
+
+.theme-bar {
+  --theme-primary-base: #d97706;
+}
+
+.theme-fit {
+  --theme-primary-base: #14b8a6;
+}
+
+.theme-frango {
+  --theme-primary-base: #eab308;
+}
+
+.theme-brunch {
+  --theme-primary-base: #f59e0b;
+}
+
+@keyframes kenburns {
+  0% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1.15);
+  }
 }

@@ -12,12 +12,14 @@ import { Categories } from './pages/admin/Categories';
 import { Products } from './pages/admin/Products';
 import { Settings } from './pages/admin/Settings';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ThemeController } from './components/ThemeController';
 
 export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <CartProvider>
+          <ThemeController />
           <BrowserRouter>
             <Routes>
               {/* Public Routes */}

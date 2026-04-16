@@ -2,8 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc, writeBatch, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Settings as SettingsType } from '../../types';
-import { Save, Database } from 'lucide-react';
+import { Save, Database, Palette } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
+import { ImageUpload } from '../../components/ImageUpload';
+import {
+  buildPrimaryOverrideVariables,
+  DEFAULT_THEME_INTENSITY,
+  DEFAULT_THEME_PRESET,
+  THEME_PRESETS,
+  ThemeIntensity,
+  ThemePresetId,
+  isValidHexColor,
+  normalizeThemeIntensity,
+  normalizeThemePreset,
+} from '../../lib/theme';
 
 export function Settings() {
   const [settings, setSettings] = useState<SettingsType | null>(null);
@@ -13,6 +25,9 @@ export function Settings() {
 
   const initialForm = {
     whatsappNumber: '',
+    themePreset: DEFAULT_THEME_PRESET,
+    themeIntensity: DEFAULT_THEME_INTENSITY,
+    primaryColorOverride: '',
     bannerTitle: '',
     bannerSubtitle: '',
     bannerImageUrl: '',
@@ -25,15 +40,32 @@ export function Settings() {
     promoBannerIsActive: false,
     promoBannerLink: '',
     restaurantName: '',
+    restaurantLogoUrl: '',
     restaurantHours: '',
     restaurantAddress: '',
     restaurantPhone: '',
+    instagramUrl: '',
+    facebookUrl: '',
     heroSubtitle: '',
     heroDescription: '',
     heroImageUrl: '',
     footerDescription: '',
+    isOpen: true,
+    deliveryTime: '',
+    pickupTime: '',
+    enableReservations: false,
+    reservationEnvironments: '',
   };
   const [formData, setFormData] = useState(initialForm);
+  const hasInvalidPrimaryColor =
+    formData.primaryColorOverride.trim().length > 0 &&
+    !isValidHexColor(formData.primaryColorOverride.trim());
+  const selectedTheme = THEME_PRESETS.find((theme) => theme.id === formData.themePreset) ?? THEME_PRESETS[0];
+  const previewPrimaryColor =
+    !hasInvalidPrimaryColor && formData.primaryColorOverride.trim().length > 0
+      ? formData.primaryColorOverride.trim()
+      : selectedTheme.color;
+  const previewVariables = buildPrimaryOverrideVariables(previewPrimaryColor, formData.themeIntensity);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
@@ -42,6 +74,9 @@ export function Settings() {
         setSettings({ id: docSnap.id, ...data });
         setFormData({
           whatsappNumber: data.whatsappNumber || '',
+          themePreset: normalizeThemePreset(data.themePreset),
+          themeIntensity: normalizeThemeIntensity(data.themeIntensity),
+          primaryColorOverride: data.primaryColorOverride || '',
           bannerTitle: data.bannerTitle || '',
           bannerSubtitle: data.bannerSubtitle || '',
           bannerImageUrl: data.bannerImageUrl || '',
@@ -54,13 +89,21 @@ export function Settings() {
           promoBannerIsActive: data.promoBannerIsActive || false,
           promoBannerLink: data.promoBannerLink || '',
           restaurantName: data.restaurantName || '',
+          restaurantLogoUrl: data.restaurantLogoUrl || '',
           restaurantHours: data.restaurantHours || '',
           restaurantAddress: data.restaurantAddress || '',
           restaurantPhone: data.restaurantPhone || '',
+          instagramUrl: data.instagramUrl || '',
+          facebookUrl: data.facebookUrl || '',
           heroSubtitle: data.heroSubtitle || '',
           heroDescription: data.heroDescription || '',
           heroImageUrl: data.heroImageUrl || '',
           footerDescription: data.footerDescription || '',
+          isOpen: data.isOpen !== false,
+          deliveryTime: data.deliveryTime || '',
+          pickupTime: data.pickupTime || '',
+          enableReservations: data.enableReservations || false,
+          reservationEnvironments: data.reservationEnvironments || '',
         });
       } else {
         setSettings(null);
@@ -72,10 +115,24 @@ export function Settings() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (hasInvalidPrimaryColor) {
+      alert('Informe uma cor hexadecimal valida, como #D9480F, antes de salvar.');
+      return;
+    }
+
     setSaving(true);
     try {
-      await setDoc(doc(db, 'settings', 'general'), formData, { merge: true });
-      alert('Configuración guardada correctamente.');
+      const primaryColorOverride = formData.primaryColorOverride.trim();
+      const payload = {
+        ...formData,
+        themePreset: normalizeThemePreset(formData.themePreset),
+        themeIntensity: normalizeThemeIntensity(formData.themeIntensity),
+        primaryColorOverride: isValidHexColor(primaryColorOverride) ? primaryColorOverride : '',
+      };
+
+      await setDoc(doc(db, 'settings', 'general'), payload, { merge: true });
+      alert('Configurações salvas com sucesso.');
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'settings/general');
     } finally {
@@ -142,7 +199,7 @@ export function Settings() {
       await batch.commit();
       
       // Update restaurant name
-      await setDoc(doc(db, 'settings', 'general'), { bannerTitle: 'Nome do Restaurante' }, { merge: true });
+      await setDoc(doc(db, 'settings', 'general'), { restaurantName: 'Nome do Restaurante' }, { merge: true });
 
       alert('Cardápio de teste adicionado com sucesso!');
     } catch (error) {
@@ -152,16 +209,16 @@ export function Settings() {
     }
   };
 
-  if (loading) return <div>Cargando...</div>;
+  if (loading) return <div className="text-zinc-500 animate-pulse">Carregando...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Configuración General</h1>
+    <div className="max-w-4xl mx-auto pb-10">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">Configurações Gerais</h1>
         <button
           onClick={handleSeedDatabase}
           disabled={seeding}
-          className="bg-orange-100 text-orange-700 px-4 py-2 rounded-md hover:bg-orange-200 flex items-center gap-2 font-medium text-sm transition-colors disabled:opacity-50"
+          className="bg-orange-50 text-orange-600 border border-orange-100 px-4 py-2.5 rounded-lg hover:bg-orange-100 flex items-center gap-2 font-medium text-sm transition-colors disabled:opacity-50"
         >
           <Database size={16} />
           {seeding ? 'Adicionando...' : 'Adicionar Cardápio de Teste'}
@@ -169,43 +226,237 @@ export function Settings() {
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Contacto */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Informações do Restaurante</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
+          <div className="flex items-start gap-3 border-b border-zinc-100 pb-4 mb-6">
+            <div className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center shrink-0">
+              <Palette size={20} />
+            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Nome do Restaurante</label>
+              <h2 className="text-lg font-semibold text-zinc-900">Identidade Visual</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Escolha um tema por nicho e, se quiser, sobrescreva a cor principal para adaptar a marca do restaurante.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Tema pré-definido</label>
+              <select
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
+                value={formData.themePreset}
+                onChange={(e) => setFormData({ ...formData, themePreset: e.target.value as ThemePresetId })}
+              >
+                {THEME_PRESETS.map((theme) => (
+                  <option key={theme.id} value={theme.id}>
+                    {theme.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Cor primária customizada (opcional)</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
+                value={formData.primaryColorOverride}
+                onChange={(e) => setFormData({ ...formData, primaryColorOverride: e.target.value })}
+                placeholder="Ex: #D9480F"
+              />
+              <p className="mt-1.5 text-sm text-zinc-500">
+                Aceita hexadecimal com `#`. Deixe em branco para usar a cor padrão do tema.
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-zinc-700 mb-3">Intensidade da cor</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {([
+                { id: 'leve', label: 'Leve', description: 'Mais discreta, com acentos suaves.' },
+                { id: 'medio', label: 'Médio', description: 'Equilíbrio entre contraste e suavidade.' },
+                { id: 'forte', label: 'Forte', description: 'Acentos mais marcantes em estados ativos.' },
+              ] as const).map((option) => {
+                const isActive = formData.themeIntensity === option.id;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, themeIntensity: option.id as ThemeIntensity })}
+                    className={`rounded-xl border p-4 text-left transition-all ${
+                      isActive
+                        ? 'border-orange-400 bg-orange-50 shadow-sm'
+                        : 'border-zinc-200 bg-white hover:border-orange-200 hover:bg-zinc-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="font-semibold text-zinc-900">{option.label}</span>
+                      <span className={`h-2.5 w-2.5 rounded-full ${isActive ? 'bg-orange-500' : 'bg-zinc-300'}`} />
+                    </div>
+                    <p className="text-sm text-zinc-500 leading-relaxed">{option.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-sm text-zinc-500">
+              Controla o peso visual dos estados ativos, badges e superfícies suaves sem colorir o fundo do app.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {THEME_PRESETS.map((theme) => {
+              const isActive = theme.id === formData.themePreset;
+
+              return (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, themePreset: theme.id })}
+                  className={`rounded-xl border p-4 text-left transition-all ${
+                    isActive
+                      ? 'border-orange-400 bg-orange-50 shadow-sm'
+                      : 'border-zinc-200 bg-zinc-50 hover:border-orange-200 hover:bg-orange-50/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <span className="font-semibold text-zinc-900">{theme.label}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="h-3 w-3 rounded-full border border-white shadow-sm" style={{ backgroundColor: theme.color }} />
+                      <span className={`h-3 w-3 rounded-full ${isActive ? 'bg-orange-500' : 'bg-zinc-300'}`} />
+                    </div>
+                  </div>
+                  <p className="text-sm text-zinc-500 leading-relaxed">{theme.description}</p>
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            className="mt-5 rounded-2xl border border-zinc-200 bg-white p-5"
+            style={previewVariables as React.CSSProperties}
+          >
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-zinc-900">Preview rápido</p>
+                <p className="text-sm text-zinc-500">
+                  Base neutra com a cor atuando apenas como destaque em CTA, badges e estado ativo.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border px-3 py-1 text-xs font-semibold" style={{ borderColor: 'var(--primary-soft-border)', color: 'var(--primary)' }}>
+                  {selectedTheme.label}
+                </span>
+                <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-600">
+                  Intensidade {formData.themeIntensity}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <button
+                type="button"
+                className="rounded-xl px-4 py-3 text-sm font-semibold"
+                style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
+              >
+                Botão principal
+              </button>
+              <div
+                className="rounded-xl border px-4 py-3 text-sm font-semibold"
+                style={{
+                  backgroundColor: 'var(--primary-soft)',
+                  borderColor: 'var(--primary-soft-border)',
+                  color: 'var(--primary-strong)',
+                }}
+              >
+                Badge / chip ativo
+              </div>
+              <div
+                className="rounded-xl border bg-white px-4 py-3 text-sm font-medium"
+                style={{ borderColor: 'var(--primary-soft-border)', color: 'var(--text)' }}
+              >
+                Superfície neutra com acento
+              </div>
+            </div>
+          </div>
+
+          {hasInvalidPrimaryColor && (
+            <p className="mt-4 text-sm text-red-600">
+              A cor customizada precisa estar em formato hexadecimal, como `#D9480F`.
+            </p>
+          )}
+        </div>
+
+        {/* Contato */}
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
+          <h2 className="text-lg font-semibold text-zinc-900 mb-6 border-b border-zinc-100 pb-3">Informações do Restaurante</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-2 cursor-pointer bg-zinc-50 p-4 rounded-lg border border-zinc-200">
+                <input
+                  type="checkbox"
+                  checked={formData.isOpen} onChange={(e) => setFormData({ ...formData, isOpen: e.target.checked })}
+                  className="rounded border-zinc-300 text-orange-500 focus:ring-orange-500 w-5 h-5"
+                />
+                <span className="font-bold text-zinc-900">Restaurante Aberto para Pedidos</span>
+              </label>
+              <p className="mt-1.5 text-sm text-zinc-500">Desmarque para mostrar "Loja Fechada" no catálogo.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Nome do Restaurante</label>
+              <input
+                type="text"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.restaurantName} onChange={(e) => setFormData({ ...formData, restaurantName: e.target.value })}
                 placeholder="Ex: ÀUREA Gastronomia"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Horário de Funcionamento</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Horário de Funcionamento</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.restaurantHours} onChange={(e) => setFormData({ ...formData, restaurantHours: e.target.value })}
-                placeholder="Ex: Ter–Dom · 18h às 00h"
+                placeholder="Ex: 18:00 - 23:00"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Endereço Completo</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Tempo de Entrega Estimado</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
+                value={formData.deliveryTime} onChange={(e) => setFormData({ ...formData, deliveryTime: e.target.value })}
+                placeholder="Ex: 60 - 120"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Aparecerá como "MINUTOS" no catálogo.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Tempo de Retirada Estimado</label>
+              <input
+                type="text"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
+                value={formData.pickupTime} onChange={(e) => setFormData({ ...formData, pickupTime: e.target.value })}
+                placeholder="Ex: 40"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Aparecerá como "MINUTOS" no catálogo.</p>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Endereço Completo</label>
+              <input
+                type="text"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.restaurantAddress} onChange={(e) => setFormData({ ...formData, restaurantAddress: e.target.value })}
                 placeholder="Ex: Rua das Flores, 123 – Curitiba"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Telefone (Exibição)</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Telefone (Exibição)</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.restaurantPhone} onChange={(e) => setFormData({ ...formData, restaurantPhone: e.target.value })}
                 placeholder="Ex: (41) 99534-3245"
               />
@@ -213,53 +464,110 @@ export function Settings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Número de WhatsApp (con código de país, ej: 5511999999999)</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">Número de WhatsApp (com código do país)</label>
             <input
               type="text" required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+              className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
               value={formData.whatsappNumber} onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
               placeholder="5511999999999"
             />
-            <p className="mt-1 text-sm text-gray-500">Este número recibirá los pedidos.</p>
+            <p className="mt-1.5 text-sm text-zinc-500">Este número receberá os pedidos.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Instagram (URL)</label>
+              <input
+                type="url"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
+                value={formData.instagramUrl} onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
+                placeholder="https://instagram.com/seu.restaurante"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Facebook (URL)</label>
+              <input
+                type="url"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
+                value={formData.facebookUrl} onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
+                placeholder="https://facebook.com/seu.restaurante"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Configurações de Reserva */}
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3 mb-6">
+            <h2 className="text-lg font-semibold text-zinc-900">Reservas de Mesa</h2>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.enableReservations} onChange={(e) => setFormData({ ...formData, enableReservations: e.target.checked })}
+                className="rounded border-zinc-300 text-orange-500 focus:ring-orange-500"
+              />
+              <span className="text-sm font-medium text-zinc-700">Ativar sistema de reservas</span>
+            </label>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Ambientes / Áreas Disponíveis (separados por vírgula)</label>
+              <input
+                type="text"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
+                value={formData.reservationEnvironments} onChange={(e) => setFormData({ ...formData, reservationEnvironments: e.target.value })}
+                placeholder="Ex: Salão Principal, Varanda Externa, Espaço Kids"
+              />
+              <p className="mt-1.5 text-sm text-zinc-500">Estas opções aparecerão para o cliente escolher durante a reserva.</p>
+            </div>
           </div>
         </div>
 
         {/* Página Inicial (Home) */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Página Inicial (Home)</h2>
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
+          <h2 className="text-lg font-semibold text-zinc-900 mb-6 border-b border-zinc-100 pb-3">Página Inicial (Home)</h2>
           
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Subtítulo (Hero)</label>
+              <ImageUpload
+                value={formData.restaurantLogoUrl}
+                onChange={(url) => setFormData({ ...formData, restaurantLogoUrl: url })}
+                label="Logo do Restaurante"
+                folder="settings"
+              />
+              <p className="mt-1.5 text-sm text-zinc-500">Será exibida no cabeçalho do catálogo no lugar da letra inicial.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Subtítulo (Hero)</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.heroSubtitle} onChange={(e) => setFormData({ ...formData, heroSubtitle: e.target.value })}
                 placeholder="Ex: Gastronomia"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Descrição (Hero)</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Descrição (Hero)</label>
               <textarea
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 rows={3}
                 value={formData.heroDescription} onChange={(e) => setFormData({ ...formData, heroDescription: e.target.value })}
                 placeholder="Ex: Uma experiência sensorial que celebra a arte culinária..."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">URL da Imagem de Fundo (Hero)</label>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                value={formData.heroImageUrl} onChange={(e) => setFormData({ ...formData, heroImageUrl: e.target.value })}
-                placeholder="https://exemplo.com/imagem.jpg"
+              <ImageUpload
+                value={formData.heroImageUrl}
+                onChange={(url) => setFormData({ ...formData, heroImageUrl: url })}
+                label="Imagem de Fundo (Hero)"
+                folder="settings"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Descrição do Rodapé</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Descrição do Rodapé</label>
               <textarea
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 rows={2}
                 value={formData.footerDescription} onChange={(e) => setFormData({ ...formData, footerDescription: e.target.value })}
                 placeholder="Ex: Gastronomia autoral que celebra ingredientes locais..."
@@ -268,133 +576,132 @@ export function Settings() {
           </div>
         </div>
 
-        {/* Banner Principal (Hero) - Antigo, usado no Menu */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center border-b pb-2 mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Banner do Cardápio</h2>
-            <label className="flex items-center gap-2">
+        {/* Banner do Cardápio */}
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3 mb-6">
+            <h2 className="text-lg font-semibold text-zinc-900">Banner do Cardápio</h2>
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.bannerIsActive} onChange={(e) => setFormData({ ...formData, bannerIsActive: e.target.checked })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-zinc-300 text-orange-500 focus:ring-orange-500"
               />
-              <span className="text-sm font-medium text-gray-700">Activar Banner</span>
+              <span className="text-sm font-medium text-zinc-700">Ativar Banner</span>
             </label>
           </div>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Título del Banner</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Título do Banner</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.bannerTitle} onChange={(e) => setFormData({ ...formData, bannerTitle: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Subtítulo</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Subtítulo</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.bannerSubtitle} onChange={(e) => setFormData({ ...formData, bannerSubtitle: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">URL de la Imagen de Fondo</label>
-              <input
-                type="url"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                value={formData.bannerImageUrl} onChange={(e) => setFormData({ ...formData, bannerImageUrl: e.target.value })}
+              <ImageUpload
+                value={formData.bannerImageUrl}
+                onChange={(url) => setFormData({ ...formData, bannerImageUrl: url })}
+                label="Imagem de Fundo do Banner"
+                folder="settings"
               />
             </div>
           </div>
         </div>
 
-        {/* Banner de Promoción (Catálogo) */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center border-b pb-2 mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Banner de Promoción (Catálogo)</h2>
-            <label className="flex items-center gap-2">
+        {/* Banner de Promoção (Catálogo) */}
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3 mb-6">
+            <h2 className="text-lg font-semibold text-zinc-900">Banner de Promoção (Catálogo)</h2>
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.promoBannerIsActive} onChange={(e) => setFormData({ ...formData, promoBannerIsActive: e.target.checked })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-zinc-300 text-orange-500 focus:ring-orange-500"
               />
-              <span className="text-sm font-medium text-gray-700">Activar Banner de Promoción</span>
+              <span className="text-sm font-medium text-zinc-700">Ativar Banner de Promoção</span>
             </label>
           </div>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700">URL de la Imagen Promocional</label>
-              <input
-                type="url"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                value={formData.promoBannerImageUrl} onChange={(e) => setFormData({ ...formData, promoBannerImageUrl: e.target.value })}
-                placeholder="https://ejemplo.com/imagen-promo.jpg"
+              <ImageUpload
+                value={formData.promoBannerImageUrl}
+                onChange={(url) => setFormData({ ...formData, promoBannerImageUrl: url })}
+                label="Imagem Promocional"
+                folder="settings"
               />
-              <p className="mt-1 text-sm text-gray-500">Se mostrará justo debajo del banner principal en el catálogo.</p>
+              <p className="mt-1.5 text-sm text-zinc-500">Será exibido logo abaixo do banner principal no catálogo.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Enlace (Opcional)</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Link (Opcional)</label>
               <input
                 type="url"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.promoBannerLink} onChange={(e) => setFormData({ ...formData, promoBannerLink: e.target.value })}
-                placeholder="https://wa.me/... o https://tu-sitio.com/promo"
+                placeholder="https://wa.me/... ou https://seu-site.com/promo"
               />
-              <p className="mt-1 text-sm text-gray-500">Si agregas un enlace, la imagen será clickeable.</p>
+              <p className="mt-1.5 text-sm text-zinc-500">Se você adicionar um link, a imagem ficará clicável.</p>
             </div>
           </div>
         </div>
 
-        {/* SEO y Marketing */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4 border-b pb-2">SEO y Marketing</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* SEO e Marketing */}
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
+          <h2 className="text-lg font-semibold text-zinc-900 mb-6 border-b border-zinc-100 pb-3">SEO e Marketing</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Título SEO (Aparece en Google y pestañas)</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Título SEO (Aparece no Google e abas)</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.seoTitle} onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Descripción SEO</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Descrição SEO</label>
               <textarea
                 rows={2}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.seoDescription} onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Meta Pixel ID</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Meta Pixel ID</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.metaPixelId} onChange={(e) => setFormData({ ...formData, metaPixelId: e.target.value })}
-                placeholder="Ej: 123456789012345"
+                placeholder="Ex: 123456789012345"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Google Tag ID</label>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Google Tag ID</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
                 value={formData.googleTagId} onChange={(e) => setFormData({ ...formData, googleTagId: e.target.value })}
-                placeholder="Ej: G-XXXXXXXXXX"
+                placeholder="Ex: G-XXXXXXXXXX"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-4">
           <button
             type="submit"
-            disabled={saving}
-            className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 flex items-center gap-2 font-medium shadow-sm disabled:opacity-50"
+            disabled={saving || hasInvalidPrimaryColor}
+            className="bg-orange-500 text-white px-8 py-3.5 rounded-lg hover:bg-orange-600 flex items-center gap-2 font-bold shadow-sm disabled:opacity-50 transition-colors"
           >
             <Save size={20} />
-            {saving ? 'Guardando...' : 'Guardar Configuración'}
+            {saving ? 'Salvando...' : 'Salvar Configurações'}
           </button>
         </div>
       </form>

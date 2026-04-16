@@ -1,3 +1,5 @@
+import type { ThemeIntensity, ThemePresetId } from './lib/theme';
+
 export interface Category {
   id: string;
   name: string;
@@ -18,6 +20,9 @@ export interface Product {
 export interface Settings {
   id: string;
   whatsappNumber: string;
+  themePreset?: ThemePresetId;
+  themeIntensity?: ThemeIntensity;
+  primaryColorOverride?: string;
   bannerTitle?: string;
   bannerSubtitle?: string;
   bannerImageUrl?: string;
@@ -30,13 +35,21 @@ export interface Settings {
   promoBannerIsActive?: boolean;
   promoBannerLink?: string;
   restaurantName?: string;
+  restaurantLogoUrl?: string;
   restaurantHours?: string;
   restaurantAddress?: string;
   restaurantPhone?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
   heroSubtitle?: string;
   heroDescription?: string;
   heroImageUrl?: string;
   footerDescription?: string;
+  isOpen?: boolean;
+  deliveryTime?: string;
+  pickupTime?: string;
+  enableReservations?: boolean;
+  reservationEnvironments?: string;
 }
 
 export interface CartItem extends Product {

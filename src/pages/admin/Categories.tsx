@@ -45,7 +45,7 @@ export function Categories() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar esta categoría?')) {
+    if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
       try {
         await deleteDoc(doc(db, 'categories', id));
       } catch (error) {
@@ -54,81 +54,92 @@ export function Categories() {
     }
   };
 
-  if (loading) return <div>Cargando...</div>;
+  if (loading) return <div className="text-zinc-500 animate-pulse">Carregando...</div>;
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Categorías</h1>
+    <div className="max-w-5xl">
+      <h1 className="text-3xl font-bold text-zinc-900 mb-2 tracking-tight">Categorias</h1>
+      <p className="text-zinc-500 mb-8">Organize os grupos do seu cardápio (ex: Lanches, Bebidas).</p>
       
-      <div className="bg-white shadow rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-medium mb-4">{isEditing ? 'Editar Categoría' : 'Nueva Categoría'}</h2>
-        <form onSubmit={handleSubmit} className="flex gap-4 items-end">
+      <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-6 mb-8">
+        <h2 className="text-lg font-semibold text-zinc-900 mb-4">{isEditing ? 'Editar Categoria' : 'Nova Categoria'}</h2>
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 sm:items-end">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700">Nombre</label>
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">Nome</label>
             <input
               type="text"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+              className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Ex: Hambúrgueres"
             />
           </div>
-          <div className="w-24">
-            <label className="block text-sm font-medium text-gray-700">Orden</label>
+          <div className="w-full sm:w-28">
+            <label className="block text-sm font-medium text-zinc-700 mb-1.5">Ordem</label>
             <input
               type="number"
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+              className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
               value={formData.order}
               onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) })}
             />
           </div>
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
-          >
-            {isEditing ? <Edit2 size={18} /> : <Plus size={18} />}
-            {isEditing ? 'Actualizar' : 'Añadir'}
-          </button>
-          {isEditing && (
+          <div className="flex gap-2">
             <button
-              type="button"
-              onClick={() => {
-                setIsEditing(null);
-                setFormData({ name: '', order: 0 });
-              }}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+              type="submit"
+              className="bg-orange-500 text-white px-5 py-2.5 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 font-medium text-sm whitespace-nowrap h-[42px]"
             >
-              Cancelar
+              {isEditing ? <Edit2 size={16} /> : <Plus size={16} />}
+              {isEditing ? 'Salvar' : 'Adicionar'}
             </button>
-          )}
+            {isEditing && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditing(null);
+                  setFormData({ name: '', order: 0 });
+                }}
+                className="bg-zinc-100 text-zinc-700 px-5 py-2.5 rounded-lg hover:bg-zinc-200 transition-colors font-medium text-sm h-[42px]"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white border border-zinc-200 shadow-sm rounded-xl overflow-hidden">
+        <table className="min-w-full divide-y divide-zinc-200">
+          <thead className="bg-zinc-50/50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orden</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Ordem</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Nome da Categoria</th>
+              <th className="px-6 py-4 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-zinc-100">
             {categories.map((category) => (
-              <tr key={category.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{category.order}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{category.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => handleEdit(category)} className="text-blue-600 hover:text-blue-900 mr-4">
-                    <Edit2 size={18} />
+              <tr key={category.id} className="hover:bg-zinc-50/50 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 font-medium">{category.order}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900">{category.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <button onClick={() => handleEdit(category)} className="text-zinc-400 hover:text-orange-500 transition-colors mr-4 p-1">
+                    <Edit2 size={16} />
                   </button>
-                  <button onClick={() => handleDelete(category.id)} className="text-red-600 hover:text-red-900">
-                    <Trash2 size={18} />
+                  <button onClick={() => handleDelete(category.id)} className="text-zinc-400 hover:text-red-500 transition-colors p-1">
+                    <Trash2 size={16} />
                   </button>
                 </td>
               </tr>
             ))}
+            {categories.length === 0 && (
+              <tr>
+                <td colSpan={3} className="px-6 py-8 text-center text-sm text-zinc-500">
+                  Nenhuma categoria cadastrada.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

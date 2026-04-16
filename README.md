@@ -1,20 +1,138 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Cardápio Digital (Vite + React + Firebase)
 
-# Run and deploy your AI Studio app
+Aplicação web de **cardápio digital** com:
 
-This contains everything you need to run your app locally.
+- **Catálogo público** (Home + Cardápio) com busca, destaques, carrinho e checkout via WhatsApp
+- **Painel administrativo** (login + CRUD de categorias e produtos + configurações)
+- **Firebase Auth + Firestore** com regras de segurança e validação de dados
 
-View your app in AI Studio: https://ai.studio/apps/f2ddc861-435e-4187-b4a4-89f025a93717
+## Sumário
 
-## Run Locally
+- [Funcionalidades](#funcionalidades)
+- [Stack](#stack)
+- [Rotas](#rotas)
+- [Modelo de dados](#modelo-de-dados)
+- [Rodar localmente](#rodar-localmente)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Deploy](#deploy)
+- [Documentação completa](#documentação-completa)
 
-**Prerequisites:**  Node.js
+## Funcionalidades
 
+### Público
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- Página inicial com informações do restaurante (nome, horário, endereço, telefone) e CTA para o cardápio
+- Cardápio com:
+  - Categorias (ordenadas por `order`)
+  - Busca por nome/descrição
+  - Destaques (produtos com `isPromotion`)
+  - Carrinho local (no navegador) com total e quantidades
+  - Checkout que abre o WhatsApp com o pedido formatado
+
+### Admin
+
+- Login com email/senha
+- Gerenciamento de:
+  - Categorias (CRUD)
+  - Produtos (CRUD, ativo/inativo e promoção)
+  - Configurações gerais (SEO, banners, dados do restaurante, Pixel/Tag)
+  - Seed de dados de exemplo (botão “Adicionar Cardápio de Teste”)
+
+## Stack
+
+- React 19 + TypeScript
+- Vite 6
+- React Router 7
+- Tailwind CSS 4
+- Firebase (Auth + Firestore)
+
+## Rotas
+
+- `/` → Home (pública)
+- `/menu` → Cardápio (pública)
+- `/login` → Login do admin
+- `/admin` → Painel admin
+  - `/admin/categories` → Categorias
+  - `/admin/products` → Produtos
+  - `/admin/settings` → Configurações
+
+As rotas estão definidas em [App.tsx](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/src/App.tsx).
+
+## Modelo de dados
+
+O Firestore assume estas coleções:
+
+- `categories`
+  - `name` (string)
+  - `order` (number)
+- `products`
+  - `name` (string)
+  - `description` (string, opcional)
+  - `price` (number)
+  - `imageUrl` (string, opcional)
+  - `categoryId` (string)
+  - `isPromotion` (boolean, opcional)
+  - `isActive` (boolean)
+- `settings` (documento `general`)
+  - `whatsappNumber` (string)
+  - e campos opcionais de SEO, banners e dados do restaurante
+
+Regras e validações estão em [firestore.rules](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/firestore.rules).
+
+## Rodar localmente
+
+### Pré-requisitos
+
+- Node.js (recomendado: LTS)
+- Projeto Firebase configurado (Firestore + Authentication)
+
+### Instalação
+
+```bash
+npm install
+```
+
+### Desenvolvimento
+
+```bash
+npm run dev
+```
+
+Servidor padrão: `http://localhost:3000`
+
+### Build e preview
+
+```bash
+npm run build
+npm run preview
+```
+
+### Typecheck (lint)
+
+```bash
+npm run lint
+```
+
+## Variáveis de ambiente
+
+Este projeto inclui um [.env.example](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/.env.example) com:
+
+- `GEMINI_API_KEY`
+- `APP_URL`
+
+Observação: o app atual (Cardápio Digital) não usa Gemini diretamente no código de `src/`. Se você não estiver usando recursos de IA, pode ignorar essas variáveis.
+
+## Deploy
+
+- Vercel (SPA) com rewrite já configurado em [vercel.json](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/vercel.json)
+- Firebase Hosting (opcional), usando as mesmas regras do Firestore
+
+Guia detalhado em [/docs/DEPLOY.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/DEPLOY.md).
+
+## Documentação completa
+
+- Operação (admin + pedidos WhatsApp): [/docs/OPERACAO.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/OPERACAO.md)
+- Firebase (dados, regras e Auth): [/docs/FIREBASE.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/FIREBASE.md)
+- Arquitetura do front-end: [/docs/ARQUITETURA.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/ARQUITETURA.md)
+- Deploy (Vercel + Firebase Hosting): [/docs/DEPLOY.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/DEPLOY.md)
+- Troubleshooting: [/docs/TROUBLESHOOTING.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/TROUBLESHOOTING.md)

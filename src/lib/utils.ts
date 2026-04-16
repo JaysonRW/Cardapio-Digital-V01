@@ -6,8 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(value: number) {
-  return new Intl.NumberFormat("es-ES", {
+  return new Intl.NumberFormat("pt-BR", {
     style: "currency",
-    currency: "EUR", // Can be changed to MXN, ARS, etc. based on specific country, but EUR/USD is common fallback. Let's use USD or local currency. Let's use a generic format or USD since it's common in LATAM if not local. Let's use USD for now, or just a simple formatting.
+    currency: "BRL",
   }).format(value);
 }

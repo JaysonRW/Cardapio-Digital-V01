@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "propagoumkd@gmail.com") ||
+        (request.auth.token.email == "adm01@admin.com")
+      );
+    }
+
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && request.resource.size < 2 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

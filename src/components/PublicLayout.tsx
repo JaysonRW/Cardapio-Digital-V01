@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 
 export function PublicLayout() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="theme-app min-h-screen font-sans">
       <Outlet />
     </div>
   );
