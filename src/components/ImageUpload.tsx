@@ -71,7 +71,7 @@ export function ImageUpload({ value, onChange, label, folder = 'general', classN
             <button
               type="button"
               onClick={removeImage}
-              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md"
+              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md"
             >
               <X size={16} />
             </button>
