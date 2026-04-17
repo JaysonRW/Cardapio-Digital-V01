@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Settings } from '../types';
+import { useTenant } from '../contexts/TenantContext';
 import { Clock, MapPin, Phone, MessageCircle, Instagram, Facebook, Calendar, Users, Edit3, Star, Zap, DollarSign, ArrowRight } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { motion } from 'framer-motion';
 
 export function Home() {
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { restaurant, settings, loading: tenantLoading } = useTenant();
+  const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
 
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [reservationData, setReservationData] = useState({
@@ -21,31 +22,33 @@ export function Home() {
   });
 
   useEffect(() => {
-    const unsubSettings = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as Settings;
-        setSettings({ id: docSnap.id, ...data });
-        
-        // Atualiza o ambiente inicial caso exista
-        if (data.reservationEnvironments) {
-          const envs = data.reservationEnvironments.split(',').map(e => e.trim());
-          if (envs.length > 0) {
-            setReservationData(prev => ({ ...prev, environment: envs[0] }));
-          }
+    if (settings) {
+      // Atualiza o ambiente inicial caso exista
+      if (settings.reservationEnvironments) {
+        const envs = settings.reservationEnvironments.split(',').map(e => e.trim());
+        if (envs.length > 0) {
+          setReservationData(prev => ({ ...prev, environment: envs[0] }));
         }
-        
-        if (data.seoTitle) document.title = data.seoTitle;
       }
-      setLoading(false);
-    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/general'));
+      
+      if (settings.seoTitle) document.title = settings.seoTitle;
+    }
+  }, [settings]);
 
-    return () => unsubSettings();
-  }, []);
-
-  if (loading) {
+  if (tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  if (!restaurant) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg)] px-6 text-center">
+        <h1 className="text-4xl font-serif font-bold text-zinc-800 mb-4">Restaurante não encontrado</h1>
+        <p className="text-zinc-500 mb-8">O link que você acessou pode estar incorreto ou o restaurante não está ativo.</p>
+        <Link to="/" className="bg-orange-500 text-white px-8 py-3 rounded-xl font-bold">Voltar para o Início</Link>
       </div>
     );
   }
@@ -95,8 +98,8 @@ export function Home() {
           {restaurantName.toUpperCase()}
         </div>
         <nav className="hidden md:flex gap-8 text-sm font-semibold tracking-[0.18em] text-zinc-500">
-          <Link to="/" className="text-[var(--primary)] transition-colors">INICIO</Link>
-          <Link to="/menu" className="hover:text-[var(--text)] transition-colors">CARDAPIO</Link>
+          <Link to={`/${restaurantSlug}`} className="text-[var(--primary)] transition-colors">INICIO</Link>
+          <Link to={`/${restaurantSlug}/menu`} className="hover:text-[var(--text)] transition-colors">CARDAPIO</Link>
           <a href="#contato" className="hover:text-[var(--text)] transition-colors">CONTATO</a>
         </nav>
         </div>
@@ -161,7 +164,7 @@ export function Home() {
             >
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Link 
-                  to="/menu" 
+                  to={`/${restaurantSlug}/menu`} 
                   className="bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-[var(--primary-foreground)] font-semibold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg h-full shadow-sm"
                 >
                   Ver Cardápio
@@ -445,7 +448,7 @@ export function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link 
-                  to="/menu" 
+                  to={`/${restaurantSlug}/menu`} 
                   className="bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-[var(--primary-foreground)] font-bold py-4 px-10 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg shadow-sm w-full sm:w-auto"
                 >
                   <ArrowRight size={20} />
@@ -543,7 +546,7 @@ export function Home() {
             <div className="mt-10">
               <h3 className="text-[var(--text)] text-sm font-bold tracking-widest mb-4 uppercase">Links Rápidos</h3>
               <div className="flex flex-col gap-3">
-                <Link to="/menu" className="text-zinc-500 hover:text-[var(--primary)] transition-colors w-fit">
+                <Link to={`/${restaurantSlug}/menu`} className="text-zinc-500 hover:text-[var(--primary)] transition-colors w-fit">
                   Ver Cardápio Completo
                 </Link>
                 <Link to="/admin" className="text-zinc-600 hover:text-zinc-400 transition-colors w-fit text-sm">

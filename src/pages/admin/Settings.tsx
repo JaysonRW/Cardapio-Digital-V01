@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc, writeBatch, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Settings as SettingsType } from '../../types';
+import { useAdmin } from '../../contexts/AdminContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Save, Database, Palette } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { ImageUpload } from '../../components/ImageUpload';
@@ -18,6 +20,10 @@ import {
 } from '../../lib/theme';
 
 export function Settings() {
+  const { restaurant } = useAdmin();
+  const { user } = useAuth();
+  const tenantId = restaurant?.id || '';
+  const userId = user?.uid || '';
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,7 +74,9 @@ export function Settings() {
   const previewVariables = buildPrimaryOverrideVariables(previewPrimaryColor, formData.themeIntensity);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
+    if (!tenantId) return;
+
+    const unsubscribe = onSnapshot(doc(db, 'restaurants', tenantId, 'settings', 'general'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data() as SettingsType;
         setSettings({ id: docSnap.id, ...data });
@@ -109,12 +117,13 @@ export function Settings() {
         setSettings(null);
       }
       setLoading(false);
-    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/general'));
+    }, (error) => handleFirestoreError(error, OperationType.GET, `restaurants/${tenantId}/settings/general`));
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tenantId) return;
 
     if (hasInvalidPrimaryColor) {
       alert('Informe uma cor hexadecimal valida, como #D9480F, antes de salvar.');
@@ -131,16 +140,17 @@ export function Settings() {
         primaryColorOverride: isValidHexColor(primaryColorOverride) ? primaryColorOverride : '',
       };
 
-      await setDoc(doc(db, 'settings', 'general'), payload, { merge: true });
+      await setDoc(doc(db, 'restaurants', tenantId, 'settings', 'general'), payload, { merge: true });
       alert('Configurações salvas com sucesso.');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'settings/general');
+      handleFirestoreError(error, OperationType.WRITE, `restaurants/${tenantId}/settings/general`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleSeedDatabase = async () => {
+    if (!tenantId) return;
     if (!window.confirm('Isso irá adicionar os itens de teste ao seu banco de dados. Deseja continuar?')) return;
     
     setSeeding(true);
@@ -158,7 +168,7 @@ export function Settings() {
       ];
 
       categoriesData.forEach(cat => {
-        const ref = doc(db, 'categories', cat.id);
+        const ref = doc(db, 'restaurants', tenantId, 'categories', cat.id);
         batch.set(ref, { name: cat.name, order: cat.order });
       });
 
@@ -192,14 +202,14 @@ export function Settings() {
       ];
 
       productsData.forEach((prod) => {
-        const ref = doc(collection(db, 'products'));
+        const ref = doc(collection(db, 'restaurants', tenantId, 'products'));
         batch.set(ref, prod);
       });
 
       await batch.commit();
       
       // Update restaurant name
-      await setDoc(doc(db, 'settings', 'general'), { restaurantName: 'Nome do Restaurante' }, { merge: true });
+      await setDoc(doc(db, 'restaurants', tenantId, 'settings', 'general'), { restaurantName: 'Nome do Restaurante' }, { merge: true });
 
       alert('Cardápio de teste adicionado com sucesso!');
     } catch (error) {
@@ -534,7 +544,7 @@ export function Settings() {
                 value={formData.restaurantLogoUrl}
                 onChange={(url) => setFormData({ ...formData, restaurantLogoUrl: url })}
                 label="Logo do Restaurante"
-                folder="settings"
+                folder={`restaurants/${userId}/${tenantId}/settings`}
               />
               <p className="mt-1.5 text-sm text-zinc-500">Será exibida no cabeçalho do catálogo no lugar da letra inicial.</p>
             </div>
@@ -561,7 +571,7 @@ export function Settings() {
                 value={formData.heroImageUrl}
                 onChange={(url) => setFormData({ ...formData, heroImageUrl: url })}
                 label="Imagem de Fundo (Hero)"
-                folder="settings"
+                folder={`restaurants/${userId}/${tenantId}/settings`}
               />
             </div>
             <div>
@@ -611,7 +621,7 @@ export function Settings() {
                 value={formData.bannerImageUrl}
                 onChange={(url) => setFormData({ ...formData, bannerImageUrl: url })}
                 label="Imagem de Fundo do Banner"
-                folder="settings"
+                folder={`restaurants/${userId}/${tenantId}/settings`}
               />
             </div>
           </div>
@@ -636,7 +646,7 @@ export function Settings() {
                 value={formData.promoBannerImageUrl}
                 onChange={(url) => setFormData({ ...formData, promoBannerImageUrl: url })}
                 label="Imagem Promocional"
-                folder="settings"
+                folder={`restaurants/${userId}/${tenantId}/settings`}
               />
               <p className="mt-1.5 text-sm text-zinc-500">Será exibido logo abaixo do banner principal no catálogo.</p>
             </div>

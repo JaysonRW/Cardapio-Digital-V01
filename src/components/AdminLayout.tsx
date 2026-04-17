@@ -1,18 +1,26 @@
 import React from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../contexts/AdminContext';
+import { ThemeController } from './ThemeController';
 import { LayoutDashboard, Package, Tags, Settings as SettingsIcon, LogOut, ExternalLink } from 'lucide-react';
 
 export function AdminLayout() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
+  const { restaurant, settings, loading: adminLoading } = useAdmin();
   const location = useLocation();
 
-  if (loading) {
+  if (authLoading || adminLoading) {
     return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
   }
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Se não tem restaurante e não está na página de onboarding, redireciona
+  if (!restaurant && location.pathname !== '/admin/onboarding') {
+    return <Navigate to="/admin/onboarding" replace />;
   }
 
   const navItems = [
@@ -24,6 +32,7 @@ export function AdminLayout() {
 
   return (
     <div className="theme-app min-h-screen flex flex-col md:flex-row font-sans">
+      <ThemeController settings={settings} />
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-white border-r border-[var(--border)] text-[var(--text)] flex flex-col shrink-0">
         <div className="p-6 border-b border-[var(--border)]">
@@ -54,14 +63,16 @@ export function AdminLayout() {
           })}
         </nav>
         <div className="p-4 border-t border-[var(--border)] space-y-1">
-          <Link
-            to="/"
-            target="_blank"
-            className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-zinc-50 hover:text-[var(--text)] transition-all text-sm font-medium w-full text-zinc-600"
-          >
-            <ExternalLink size={18} className="text-zinc-400" />
-            <span>Acessar Site</span>
-          </Link>
+          {restaurant && (
+            <Link
+              to={`/${restaurant.slug}`}
+              target="_blank"
+              className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-zinc-50 hover:text-[var(--text)] transition-all text-sm font-medium w-full text-zinc-600"
+            >
+              <ExternalLink size={18} className="text-zinc-400" />
+              <span>Acessar Site</span>
+            </Link>
+          )}
           <button
             onClick={logout}
             className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-red-50 hover:text-red-600 transition-all text-sm font-medium w-full text-left text-zinc-600"

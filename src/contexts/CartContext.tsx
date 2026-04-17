@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Product, CartItem } from '../types';
 
 interface CartContextType {
@@ -14,14 +15,23 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
+  const storageKey = restaurantSlug ? `cart_${restaurantSlug}` : 'cart';
+
   const [items, setItems] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem('cart');
+    const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
-  }, [items]);
+    localStorage.setItem(storageKey, JSON.stringify(items));
+  }, [items, storageKey]);
+
+  // Se o slug mudar, recarrega o carrinho correspondente
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    setItems(saved ? JSON.parse(saved) : []);
+  }, [storageKey]);
 
   const addItem = (product: Product) => {
     setItems((prev) => {

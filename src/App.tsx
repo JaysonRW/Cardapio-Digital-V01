@@ -11,40 +11,54 @@ import { Dashboard } from './pages/admin/Dashboard';
 import { Categories } from './pages/admin/Categories';
 import { Products } from './pages/admin/Products';
 import { Settings } from './pages/admin/Settings';
+import { Onboarding } from './pages/admin/Onboarding';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeController } from './components/ThemeController';
+import { TenantProvider } from './contexts/TenantContext';
+import { AdminProvider } from './contexts/AdminContext';
 
 export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <CartProvider>
-          <ThemeController />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<PublicLayout />}>
-                <Route index element={<Home />} />
-                <Route path="menu" element={<Menu />} />
-              </Route>
+        <BrowserRouter>
+          <Routes>
+            {/* Main Landing / Redirect (Optional) */}
+            <Route path="/" element={<Navigate to="/acaiteria-do-jorginho" replace />} />
 
-              {/* Auth Route */}
-              <Route path="/login" element={<Login />} />
+            {/* Public Routes with Tenant Isolation */}
+            <Route path="/:restaurantSlug" element={
+              <TenantProvider>
+                <CartProvider>
+                  <PublicLayout />
+                </CartProvider>
+              </TenantProvider>
+            }>
+              <Route index element={<Home />} />
+              <Route path="menu" element={<Menu />} />
+            </Route>
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="categories" element={<Categories />} />
-                <Route path="products" element={<Products />} />
-                <Route path="settings" element={<Settings />} />
-              </Route>
+            {/* Auth Route */}
+            <Route path="/login" element={<Login />} />
+
+            {/* Admin Routes */}
+            <Route path="/admin" element={
+              <AdminProvider>
+                <AdminLayout />
+              </AdminProvider>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="onboarding" element={<Onboarding />} />
+              <Route path="categories" element={<Categories />} />
+              <Route path="products" element={<Products />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
 
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
-        </CartProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+        </AuthProvider>
+      </ErrorBoundary>
   );
 }

@@ -5,16 +5,22 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function isAdmin() {
-      return isAuthenticated() && (
-        (request.auth.token.email == "propagoumkd@gmail.com") ||
-        (request.auth.token.email == "adm01@admin.com")
-      );
+    match /restaurants/{restaurantId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && 
+                   firestore.get(/databases/(default)/documents/restaurants/$(restaurantId)).data.ownerUid == request.auth.uid &&
+                   request.resource.size < 2 * 1024 * 1024 && 
+                   request.resource.contentType.matches('image/.*');
     }
 
-    match /{allPaths=**} {
+    // Manter suporte para caminhos antigos durante a migração (Opcional)
+    match /products/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin() && request.resource.size < 2 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
+      allow write: if isAuthenticated() && (request.auth.token.email == "propagoumkd@gmail.com" || request.auth.token.email == "adm01@admin.com");
+    }
+    match /settings/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (request.auth.token.email == "propagoumkd@gmail.com" || request.auth.token.email == "adm01@admin.com");
     }
   }
 }

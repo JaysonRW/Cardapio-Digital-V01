@@ -2,17 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Category } from '../../types';
+import { useAdmin } from '../../contexts/AdminContext';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 
 export function Categories() {
+  const { restaurant } = useAdmin();
+  const tenantId = restaurant?.id || '';
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', order: 0 });
 
   useEffect(() => {
-    const q = query(collection(db, 'categories'), orderBy('order', 'asc'));
+    if (!tenantId) return;
+
+    const q = query(collection(db, 'restaurants', tenantId, 'categories'), orderBy('order', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const cats: Category[] = [];
       snapshot.forEach((doc) => {
@@ -20,22 +25,24 @@ export function Categories() {
       });
       setCategories(cats);
       setLoading(false);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'categories'));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, `restaurants/${tenantId}/categories`));
     return unsubscribe;
-  }, []);
+  }, [tenantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tenantId) return;
+
     try {
       if (isEditing) {
-        await updateDoc(doc(db, 'categories', isEditing), formData);
+        await updateDoc(doc(db, 'restaurants', tenantId, 'categories', isEditing), formData);
       } else {
-        await addDoc(collection(db, 'categories'), formData);
+        await addDoc(collection(db, 'restaurants', tenantId, 'categories'), formData);
       }
       setFormData({ name: '', order: 0 });
       setIsEditing(null);
     } catch (error) {
-      handleFirestoreError(error, isEditing ? OperationType.UPDATE : OperationType.CREATE, 'categories');
+      handleFirestoreError(error, isEditing ? OperationType.UPDATE : OperationType.CREATE, `restaurants/${tenantId}/categories`);
     }
   };
 
@@ -45,11 +52,12 @@ export function Categories() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!tenantId) return;
     if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
       try {
-        await deleteDoc(doc(db, 'categories', id));
+        await deleteDoc(doc(db, 'restaurants', tenantId, 'categories', id));
       } catch (error) {
-        handleFirestoreError(error, OperationType.DELETE, `categories/${id}`);
+        handleFirestoreError(error, OperationType.DELETE, `restaurants/${tenantId}/categories/${id}`);
       }
     }
   };

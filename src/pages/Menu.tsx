@@ -3,15 +3,17 @@ import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore'
 import { db } from '../firebase';
 import { Product, Category, Settings } from '../types';
 import { useCart } from '../contexts/CartContext';
+import { useTenant } from '../contexts/TenantContext';
 import { formatCurrency } from '../lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ShoppingCart, Plus, Minus, Trash2, Search, Clock, MapPin, Flame, Utensils, Sandwich, Beef, CupSoda, IceCreamCone, UtensilsCrossed, Star, ArrowLeft, MessageCircle, Store, Bike, ShoppingBag } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 export function Menu() {
+  const { restaurant, settings, tenantId, loading: tenantLoading } = useTenant();
+  const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckout, setIsCheckout] = useState(false);
@@ -41,40 +43,38 @@ export function Menu() {
   };
 
   useEffect(() => {
-    const unsubCats = onSnapshot(query(collection(db, 'categories'), orderBy('order')), (snapshot) => {
-      setCategories(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'categories'));
+    if (settings) {
+      // Update SEO
+      if (settings.seoTitle) document.title = settings.seoTitle;
+      if (settings.seoDescription) {
+        let meta = document.querySelector('meta[name="description"]');
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('name', 'description');
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', settings.seoDescription);
+      }
+    }
+  }, [settings]);
 
-    const unsubProds = onSnapshot(collection(db, 'products'), (snapshot) => {
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const unsubCats = onSnapshot(query(collection(db, 'restaurants', tenantId, 'categories'), orderBy('order')), (snapshot) => {
+      setCategories(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, `restaurants/${tenantId}/categories`));
+
+    const unsubProds = onSnapshot(collection(db, 'restaurants', tenantId, 'products'), (snapshot) => {
       setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)).filter(p => p.isActive));
       setLoading(false);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'products'));
-
-    const unsubSettings = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as Settings;
-        setSettings({ id: docSnap.id, ...data });
-        
-        // Update SEO
-        if (data.seoTitle) document.title = data.seoTitle;
-        if (data.seoDescription) {
-          let meta = document.querySelector('meta[name="description"]');
-          if (!meta) {
-            meta = document.createElement('meta');
-            meta.setAttribute('name', 'description');
-            document.head.appendChild(meta);
-          }
-          meta.setAttribute('content', data.seoDescription);
-        }
-      }
-    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings/general'));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, `restaurants/${tenantId}/products`));
 
     return () => {
       unsubCats();
       unsubProds();
-      unsubSettings();
     };
-  }, []);
+  }, [tenantId]);
 
   const handleWhatsAppOrder = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -120,10 +120,20 @@ export function Menu() {
     setIsCheckout(false);
   };
 
-  if (loading) {
+  if (tenantLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  if (!restaurant) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg)] px-6 text-center">
+        <h1 className="text-4xl font-serif font-bold text-zinc-800 mb-4">Restaurante não encontrado</h1>
+        <p className="text-zinc-500 mb-8">O link que você acessou pode estar incorreto ou o restaurante não está ativo.</p>
+        <Link to="/" className="bg-orange-500 text-white px-8 py-3 rounded-xl font-bold">Voltar para o Início</Link>
       </div>
     );
   }
@@ -136,7 +146,7 @@ export function Menu() {
           Bem-vindo! Nosso cardápio digital ainda está sendo preparado. Volte em breve para ver nossos produtos.
         </p>
         <div className="text-sm text-zinc-500 mt-12 border-t border-[var(--border)] pt-4 w-full max-w-xs">
-          Você é o administrador? <a href="/admin" className="text-[var(--primary)] hover:underline">Ir para o painel</a>
+          Você é o administrador? <Link to="/admin" className="text-[var(--primary)] hover:underline">Ir para o painel</Link>
         </div>
       </div>
     );
@@ -153,7 +163,7 @@ export function Menu() {
       {/* Header */}
       <header className="bg-white pt-6 pb-6 px-4 sticky top-0 z-30 border-b border-[var(--border)] shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <Link to="/" className="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-[var(--primary)] hover:bg-[var(--primary-soft)] rounded-full transition-colors mr-2 shrink-0">
+          <Link to={`/${restaurantSlug}`} className="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-[var(--primary)] hover:bg-[var(--primary-soft)] rounded-full transition-colors mr-2 shrink-0">
             <ArrowLeft size={24} />
           </Link>
           {settings?.restaurantLogoUrl ? (

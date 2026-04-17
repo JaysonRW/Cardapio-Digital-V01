@@ -43,11 +43,13 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAdmin() {
-      return isAuthenticated() && (
-        (request.auth.token.email == "propagoumkd@gmail.com") ||
-        (request.auth.token.email == "adm01@admin.com")
-      );
+    function isRestaurantOwner(restaurantId) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.ownerUid == request.auth.uid;
+    }
+
+    function isNewRestaurantOwner() {
+      return isAuthenticated() && request.resource.data.ownerUid == request.auth.uid;
     }
 
     function hasRequiredFields(fields) {
@@ -55,6 +57,14 @@ service cloud.firestore {
     }
 
     // Domain Validators
+    function isValidRestaurant() {
+      return hasRequiredFields(['slug', 'name', 'ownerUid', 'isActive']) &&
+             request.resource.data.slug is string && request.resource.data.slug.size() > 0 &&
+             request.resource.data.name is string && request.resource.data.name.size() > 0 &&
+             request.resource.data.ownerUid is string &&
+             request.resource.data.isActive is bool;
+    }
+
     function isValidCategory() {
       return hasRequiredFields(['name', 'order']) &&
              request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 100 &&
@@ -66,56 +76,55 @@ service cloud.firestore {
              request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 150 &&
              request.resource.data.price is number && request.resource.data.price >= 0 &&
              request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0 &&
-             request.resource.data.isActive is bool &&
-             (!('description' in request.resource.data) || (request.resource.data.description is string && request.resource.data.description.size() <= 1000)) &&
-             (!('imageUrl' in request.resource.data) || (request.resource.data.imageUrl is string && request.resource.data.imageUrl.size() <= 1000)) &&
-             (!('isPromotion' in request.resource.data) || request.resource.data.isPromotion is bool);
+             request.resource.data.isActive is bool;
     }
 
     function isValidSettings() {
       return hasRequiredFields(['whatsappNumber']) &&
-             request.resource.data.whatsappNumber is string && request.resource.data.whatsappNumber.size() > 0 && request.resource.data.whatsappNumber.size() < 50 &&
-             (!('bannerTitle' in request.resource.data) || (request.resource.data.bannerTitle is string && request.resource.data.bannerTitle.size() <= 200)) &&
-             (!('bannerSubtitle' in request.resource.data) || (request.resource.data.bannerSubtitle is string && request.resource.data.bannerSubtitle.size() <= 500)) &&
-             (!('bannerImageUrl' in request.resource.data) || (request.resource.data.bannerImageUrl is string && request.resource.data.bannerImageUrl.size() <= 1000)) &&
-             (!('bannerIsActive' in request.resource.data) || request.resource.data.bannerIsActive is bool) &&
-             (!('metaPixelId' in request.resource.data) || (request.resource.data.metaPixelId is string && request.resource.data.metaPixelId.size() <= 100)) &&
-             (!('googleTagId' in request.resource.data) || (request.resource.data.googleTagId is string && request.resource.data.googleTagId.size() <= 100)) &&
-             (!('seoTitle' in request.resource.data) || (request.resource.data.seoTitle is string && request.resource.data.seoTitle.size() <= 200)) &&
-             (!('seoDescription' in request.resource.data) || (request.resource.data.seoDescription is string && request.resource.data.seoDescription.size() <= 500)) &&
-             (!('promoBannerImageUrl' in request.resource.data) || (request.resource.data.promoBannerImageUrl is string && request.resource.data.promoBannerImageUrl.size() <= 1000)) &&
-             (!('promoBannerIsActive' in request.resource.data) || request.resource.data.promoBannerIsActive is bool) &&
-             (!('promoBannerLink' in request.resource.data) || (request.resource.data.promoBannerLink is string && request.resource.data.promoBannerLink.size() <= 1000)) &&
-             (!('restaurantName' in request.resource.data) || (request.resource.data.restaurantName is string && request.resource.data.restaurantName.size() <= 200)) &&
-             (!('restaurantHours' in request.resource.data) || (request.resource.data.restaurantHours is string && request.resource.data.restaurantHours.size() <= 200)) &&
-             (!('restaurantAddress' in request.resource.data) || (request.resource.data.restaurantAddress is string && request.resource.data.restaurantAddress.size() <= 500)) &&
-             (!('restaurantPhone' in request.resource.data) || (request.resource.data.restaurantPhone is string && request.resource.data.restaurantPhone.size() <= 50)) &&
-             (!('heroSubtitle' in request.resource.data) || (request.resource.data.heroSubtitle is string && request.resource.data.heroSubtitle.size() <= 200)) &&
-             (!('heroDescription' in request.resource.data) || (request.resource.data.heroDescription is string && request.resource.data.heroDescription.size() <= 1000)) &&
-             (!('heroImageUrl' in request.resource.data) || (request.resource.data.heroImageUrl is string && request.resource.data.heroImageUrl.size() <= 1000)) &&
-             (!('footerDescription' in request.resource.data) || (request.resource.data.footerDescription is string && request.resource.data.footerDescription.size() <= 500));
+             request.resource.data.whatsappNumber is string && request.resource.data.whatsappNumber.size() > 0 && request.resource.data.whatsappNumber.size() < 50;
     }
 
     // Rules
+    match /restaurants/{restaurantId} {
+      allow read: if true; // Permite leitura pública para vitrine
+      allow create: if isAuthenticated() && isValidRestaurant() && isNewRestaurantOwner();
+      allow update: if isRestaurantOwner(restaurantId) && isValidRestaurant();
+      allow delete: if false; // Por segurança, não permite deletar restaurante via client
+
+      match /categories/{categoryId} {
+        allow read: if true;
+        allow create: if isRestaurantOwner(restaurantId) && isValidCategory();
+        allow update: if isRestaurantOwner(restaurantId) && isValidCategory();
+        allow delete: if isRestaurantOwner(restaurantId);
+      }
+
+      match /products/{productId} {
+        allow read: if true;
+        allow create: if isRestaurantOwner(restaurantId) && isValidProduct();
+        allow update: if isRestaurantOwner(restaurantId) && isValidProduct();
+        allow delete: if isRestaurantOwner(restaurantId);
+      }
+
+      match /settings/{settingId} {
+        allow read: if true;
+        allow create: if isRestaurantOwner(restaurantId) && isValidSettings();
+        allow update: if isRestaurantOwner(restaurantId) && isValidSettings();
+        allow delete: if isRestaurantOwner(restaurantId);
+      }
+    }
+
+    // Manter suporte temporário para coleções na raiz durante a migração (Opcional)
     match /categories/{categoryId} {
       allow read: if true;
-      allow create: if isAdmin() && isValidCategory();
-      allow update: if isAdmin() && isValidCategory();
-      allow delete: if isAdmin();
+      allow write: if isAuthenticated() && (request.auth.token.email == "propagoumkd@gmail.com" || request.auth.token.email == "adm01@admin.com");
     }
-
     match /products/{productId} {
       allow read: if true;
-      allow create: if isAdmin() && isValidProduct();
-      allow update: if isAdmin() && isValidProduct();
-      allow delete: if isAdmin();
+      allow write: if isAuthenticated() && (request.auth.token.email == "propagoumkd@gmail.com" || request.auth.token.email == "adm01@admin.com");
     }
-
     match /settings/{settingId} {
       allow read: if true;
-      allow create: if isAdmin() && isValidSettings();
-      allow update: if isAdmin() && isValidSettings();
-      allow delete: if isAdmin();
+      allow write: if isAuthenticated() && (request.auth.token.email == "propagoumkd@gmail.com" || request.auth.token.email == "adm01@admin.com");
     }
   }
 }

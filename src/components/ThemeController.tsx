@@ -63,34 +63,18 @@ function applyTheme(settings?: Settings | null) {
   });
 }
 
-export function ThemeController() {
+export function ThemeController({ settings }: { settings?: Settings | null }) {
   useEffect(() => {
-    applyTheme(null);
-
-    const unsubscribe = onSnapshot(
-      doc(db, 'settings', 'general'),
-      (docSnap) => {
-        if (!docSnap.exists()) {
-          applyTheme(null);
-          return;
-        }
-
-        const settings = { id: docSnap.id, ...docSnap.data() } as Settings;
-        applyTheme(settings);
-      },
-      (error) => handleFirestoreError(error, OperationType.GET, 'settings/general'),
-    );
+    applyTheme(settings);
 
     return () => {
-      unsubscribe();
-
       if (typeof document !== 'undefined') {
         resetThemeState(document.documentElement, document.body);
         document.documentElement.classList.add(DEFAULT_THEME_CLASS, 'light');
         document.body.classList.add(DEFAULT_THEME_CLASS, 'light');
       }
     };
-  }, []);
+  }, [settings]);
 
   return null;
 }

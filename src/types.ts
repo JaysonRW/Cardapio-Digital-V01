@@ -6,6 +6,17 @@ export interface Category {
   order: number;
 }
 
+export interface Restaurant {
+  id: string;
+  slug: string;
+  name: string;
+  ownerUid: string;
+  isActive: boolean;
+  settings?: Settings;
+  createdAt: any;
+  updatedAt: any;
+}
+
 export interface Product {
   id: string;
   name: string;

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Product, Category } from '../../types';
+import { useAdmin } from '../../contexts/AdminContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Plus, Edit2, Trash2, Image as ImageIcon, X } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { ImageUpload } from '../../components/ImageUpload';
@@ -13,9 +15,11 @@ interface ProductFormProps {
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   isEditing: boolean;
+  tenantId: string;
+  userId: string;
 }
 
-function ProductForm({ formData, setFormData, categories, onSubmit, onCancel, isEditing }: ProductFormProps) {
+function ProductForm({ formData, setFormData, categories, onSubmit, onCancel, isEditing, tenantId, userId }: ProductFormProps) {
   return (
     <div className={`bg-white border border-zinc-200 shadow-lg rounded-xl p-6 ${isEditing ? 'border-orange-200 ring-1 ring-orange-100' : ''}`}>
       <h2 className="text-lg font-semibold text-zinc-900 mb-6">{isEditing ? 'Editar Produto' : 'Novo Produto'}</h2>
@@ -54,9 +58,10 @@ function ProductForm({ formData, setFormData, categories, onSubmit, onCancel, is
             value={formData.imageUrl} 
             onChange={(url) => setFormData({ ...formData, imageUrl: url })} 
             label="Imagem do Produto"
-            folder="products"
+            folder={`restaurants/${userId}/${tenantId}/products`}
           />
         </div>
+
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-zinc-700 mb-1.5">Descrição</label>
           <textarea
@@ -106,6 +111,10 @@ function ProductForm({ formData, setFormData, categories, onSubmit, onCancel, is
 }
 
 export function Products() {
+  const { restaurant } = useAdmin();
+  const { user } = useAuth();
+  const tenantId = restaurant?.id || '';
+  const userId = user?.uid || '';
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,34 +133,38 @@ export function Products() {
   const [formData, setFormData] = useState(initialForm);
 
   useEffect(() => {
-    const unsubCats = onSnapshot(query(collection(db, 'categories'), orderBy('order')), (snapshot) => {
-      setCategories(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'categories'));
+    if (!tenantId) return;
 
-    const unsubProds = onSnapshot(collection(db, 'products'), (snapshot) => {
+    const unsubCats = onSnapshot(query(collection(db, 'restaurants', tenantId, 'categories'), orderBy('order')), (snapshot) => {
+      setCategories(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, `restaurants/${tenantId}/categories`));
+
+    const unsubProds = onSnapshot(collection(db, 'restaurants', tenantId, 'products'), (snapshot) => {
       setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
       setLoading(false);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'products'));
+    }, (error) => handleFirestoreError(error, OperationType.LIST, `restaurants/${tenantId}/products`));
 
     return () => {
       unsubCats();
       unsubProds();
     };
-  }, []);
+  }, [tenantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tenantId) return;
+
     try {
       if (isEditing) {
-        await updateDoc(doc(db, 'products', isEditing), formData);
+        await updateDoc(doc(db, 'restaurants', tenantId, 'products', isEditing), formData);
         setIsEditing(null);
       } else {
-        await addDoc(collection(db, 'products'), formData);
+        await addDoc(collection(db, 'restaurants', tenantId, 'products'), formData);
         setIsAdding(false);
       }
       setFormData(initialForm);
     } catch (error) {
-      handleFirestoreError(error, isEditing ? OperationType.UPDATE : OperationType.CREATE, 'products');
+      handleFirestoreError(error, isEditing ? OperationType.UPDATE : OperationType.CREATE, `restaurants/${tenantId}/products`);
     }
   };
 
@@ -176,11 +189,12 @@ export function Products() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!tenantId) return;
     if (window.confirm('Tem certeza que deseja excluir este produto?')) {
       try {
-        await deleteDoc(doc(db, 'products', id));
+        await deleteDoc(doc(db, 'restaurants', tenantId, 'products', id));
       } catch (error) {
-        handleFirestoreError(error, OperationType.DELETE, `products/${id}`);
+        handleFirestoreError(error, OperationType.DELETE, `restaurants/${tenantId}/products/${id}`);
       }
     }
   };
@@ -214,6 +228,8 @@ export function Products() {
             onSubmit={handleSubmit} 
             onCancel={handleCancel}
             isEditing={false}
+            tenantId={tenantId}
+            userId={userId}
           />
         </div>
       )}
@@ -229,6 +245,8 @@ export function Products() {
                 onSubmit={handleSubmit} 
                 onCancel={handleCancel}
                 isEditing={true}
+                tenantId={tenantId}
+                userId={userId}
               />
             </div>
           ) : (
