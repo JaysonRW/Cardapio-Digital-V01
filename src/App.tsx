@@ -6,6 +6,8 @@ import { PublicLayout } from './components/PublicLayout';
 import { AdminLayout } from './components/AdminLayout';
 import { Home } from './pages/Home';
 import { Menu } from './pages/Menu';
+import { OrderTracking } from './pages/OrderTracking';
+import { MyOrders } from './pages/MyOrders';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/admin/Dashboard';
 import { Orders } from './pages/admin/Orders';
@@ -39,6 +41,8 @@ export default function App() {
             }>
               <Route index element={<Home />} />
               <Route path="menu" element={<Menu />} />
+              <Route path="order/:orderId" element={<OrderTracking />} />
+              <Route path="my-orders" element={<MyOrders />} />
             </Route>
 
             {/* Auth Route */}

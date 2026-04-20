@@ -5,14 +5,15 @@ import { Product, Category, Settings, OrderItem, SelectedOption } from '../types
 import { useCart } from '../contexts/CartContext';
 import { useTenant } from '../contexts/TenantContext';
 import { formatCurrency } from '../lib/utils';
-import { Link, useParams } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Trash2, Search, Clock, MapPin, Flame, Utensils, Sandwich, Beef, CupSoda, IceCreamCone, UtensilsCrossed, Star, ArrowLeft, MessageCircle, Store, Bike, ShoppingBag, Gift, CheckCircle2 } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Plus, Minus, Trash2, Search, Clock, MapPin, Flame, Utensils, Sandwich, Beef, CupSoda, IceCreamCone, UtensilsCrossed, Star, ArrowLeft, MessageCircle, Store, Bike, ShoppingBag, Gift, CheckCircle2, History } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { LoyaltyModal } from '../components/LoyaltyModal';
 
 export function Menu() {
   const { restaurant, settings, tenantId, loading: tenantLoading } = useTenant();
   const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,6 +280,7 @@ export function Menu() {
     }
 
     // 1. Gravar pedido no Firestore
+    let savedOrderId = '';
     try {
       console.log(`Tentando salvar pedido em restaurants/${tenantId}/orders`);
       
@@ -321,12 +323,14 @@ export function Menu() {
       console.log("Dados do pedido:", orderData);
       
       const docRef = await addDoc(collection(db, 'restaurants', tenantId, 'orders'), orderData);
+      savedOrderId = docRef.id;
       console.log("Pedido salvo com ID:", docRef.id);
 
       // Atualiza ou cria o cliente para o programa de fidelidade
       if (customerInfo.whatsapp) {
         const cleanPhone = customerInfo.whatsapp.replace(/\D/g, '');
         if (cleanPhone) {
+          localStorage.setItem(`last_phone_${restaurantSlug}`, cleanPhone);
           try {
             const customerRef = doc(db, 'restaurants', tenantId, 'customers', cleanPhone);
             await setDoc(customerRef, {
@@ -402,10 +406,14 @@ export function Menu() {
     setIsCheckout(false);
     setIsUpsellStep(false);
     
-    // Mostrar feedback de sucesso
-    setTimeout(() => {
-      setShowSuccessModal(true);
-    }, 500);
+    // Redirecionar para acompanhamento se tiver ID, senão mostrar sucesso padrão
+    if (savedOrderId) {
+      navigate(`/${restaurantSlug}/order/${savedOrderId}`);
+    } else {
+      setTimeout(() => {
+        setShowSuccessModal(true);
+      }, 500);
+    }
   };
 
   if (tenantLoading || loading) {
@@ -523,6 +531,13 @@ export function Menu() {
       {/* Sticky Category Navigation */}
       <div className="bg-white border-b border-[var(--border)] sticky top-[88px] z-20 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3 overflow-x-auto hide-scrollbar flex gap-2">
+          <Link 
+            to={`/${restaurantSlug}/my-orders`}
+            className="whitespace-nowrap px-5 py-2 rounded-full font-bold text-sm transition-colors flex items-center gap-2 bg-zinc-900 text-white hover:bg-black border border-zinc-900"
+          >
+            <History size={16} />
+            Meus Pedidos
+          </Link>
           {(settings?.loyaltyProgram?.isActive ?? true) && (
             <button 
               onClick={() => setIsLoyaltyModalOpen(true)}
@@ -1266,8 +1281,19 @@ export function Menu() {
             )}
             
             <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                // Opcional: Se já redirecionou, esse modal pode nem aparecer, mas fica como fallback
+                navigate(`/${restaurantSlug}/my-orders`);
+              }}
+              className="w-full bg-[var(--primary)] text-[var(--primary-foreground)] py-4 rounded-xl font-bold text-lg hover:bg-[var(--primary-strong)] transition-colors shadow-lg shadow-[var(--primary)]/20 mb-3"
+            >
+              Acompanhar Pedido
+            </button>
+            
+            <button
               onClick={() => setShowSuccessModal(false)}
-              className="w-full bg-[var(--primary)] text-[var(--primary-foreground)] py-4 rounded-xl font-bold text-lg hover:bg-[var(--primary-strong)] transition-colors shadow-lg shadow-[var(--primary)]/20"
+              className="w-full bg-zinc-100 text-zinc-500 py-4 rounded-xl font-bold text-lg hover:bg-zinc-200 transition-colors"
             >
               Voltar ao Cardápio
             </button>

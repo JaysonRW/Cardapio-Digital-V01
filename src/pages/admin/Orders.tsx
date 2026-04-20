@@ -25,6 +25,8 @@ export function Orders() {
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [openStatusMenuId, setOpenStatusMenuId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!restaurant?.id || !user?.uid) return;
 
@@ -143,22 +145,37 @@ export function Orders() {
                         </p>
                       )}
                     </div>
-                    <div className="relative group">
-                      <button className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors ${getStatusBadgeClass(order.status)}`}>
+                    <div className="relative">
+                      <button 
+                        onClick={() => setOpenStatusMenuId(openStatusMenuId === order.id ? null : order.id)}
+                        className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors ${getStatusBadgeClass(order.status)}`}
+                      >
                         {getStatusLabel(order.status)}
                         <ChevronDown size={14} />
                       </button>
-                      <div className="absolute right-0 mt-2 w-48 bg-white border border-zinc-100 rounded-xl shadow-xl hidden group-hover:block z-20 overflow-hidden">
-                        {['pending', 'preparing', 'on_the_way', 'completed', 'cancelled'].map((status) => (
-                          <button
-                            key={status}
-                            onClick={() => handleStatusUpdate(order.id, status as any)}
-                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 transition-colors capitalize border-b border-zinc-50 last:border-0"
-                          >
-                            {getStatusLabel(status as any)}
-                          </button>
-                        ))}
-                      </div>
+                      
+                      {openStatusMenuId === order.id && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-10" 
+                            onClick={() => setOpenStatusMenuId(null)}
+                          />
+                          <div className="absolute right-0 mt-2 w-48 bg-white border border-zinc-100 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                            {['pending', 'preparing', 'on_the_way', 'completed', 'cancelled'].map((status) => (
+                              <button
+                                key={status}
+                                onClick={() => {
+                                  handleStatusUpdate(order.id, status as any);
+                                  setOpenStatusMenuId(null);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 transition-colors capitalize border-b border-zinc-50 last:border-0"
+                              >
+                                {getStatusLabel(status as any)}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

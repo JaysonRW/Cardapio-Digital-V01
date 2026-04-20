@@ -30,6 +30,8 @@ A interface que o cliente final acessa através do link exclusivo do restaurante
 * **Recuperação de Carrinho Abandonado:** Caso o cliente adicione itens e fique inativo na página (ou feche e retorne após 15 minutos), o sistema dispara um modal sutil lembrando-o de concluir o pedido, recuperando vendas perdidas por distração.
 * **Cupons de Desconto:** Campo para aplicar códigos promocionais (ex: `PRIMEIRACOMPRA`) com validação em tempo real de valor mínimo e data de expiração.
 * **Sistema de Cashback:** Se o lojista ativar, o cliente visualiza seu saldo acumulado de compras anteriores (vinculado ao WhatsApp) e pode optar por usar o crédito como desconto no pedido atual.
+* **Acompanhamento em Tempo Real:** Após finalizar o pedido, o cliente é redirecionado para uma tela exclusiva onde pode ver o status do pedido mudando (Pendente, Preparando, A caminho, Entregue) em tempo real, além de um cronômetro mostrando o tempo decorrido.
+* **Perfil & Histórico (Meus Pedidos):** O cliente pode acessar seu histórico completo de compras digitando seu WhatsApp, visualizando detalhes de pedidos passados e acompanhando pedidos ativos.
 * **Formulário de Pedido (Checkout):**
   * **Dados do Cliente:** Nome completo.
   * **Tipo de Pedido:** Escolha entre "Entrega" ou "Retirada".
