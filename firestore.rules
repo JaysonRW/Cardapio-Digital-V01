@@ -1,130 +1,71 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: categories
-    // Document ID: auto-generated
-    // Fields:
-    //   - name: string (required)
-    //   - order: number (required)
-    //
-    // Collection: products
-    // Document ID: auto-generated
-    // Fields:
-    //   - name: string (required)
-    //   - description: string (optional)
-    //   - price: number (required)
-    //   - imageUrl: string (optional)
-    //   - categoryId: string (required)
-    //   - isPromotion: boolean (optional)
-    //   - isActive: boolean (required)
-    //
-    // Collection: settings
-    // Document ID: 'general'
-    // Fields:
-    //   - whatsappNumber: string (required)
-    //   - bannerTitle: string (optional)
-    //   - bannerSubtitle: string (optional)
-    //   - bannerImageUrl: string (optional)
-    //   - bannerIsActive: boolean (optional)
-    //   - metaPixelId: string (optional)
-    //   - googleTagId: string (optional)
-    //   - seoTitle: string (optional)
-    //   - seoDescription: string (optional)
-    //
-    // ===============================================================
-
-    // Helper Functions
+    
+    // Funções Auxiliares
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // Função para verificar se o usuário é o dono do restaurante
+    // Usamos exists() antes de get() para evitar erros se o doc não existir
     function isRestaurantOwner(restaurantId) {
       return isAuthenticated() && 
+             exists(/databases/$(database)/documents/restaurants/$(restaurantId)) &&
              get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.ownerUid == request.auth.uid;
     }
 
-    function isNewRestaurantOwner() {
-      return isAuthenticated() && request.resource.data.ownerUid == request.auth.uid;
-    }
-
-    function hasRequiredFields(fields) {
-      return request.resource.data.keys().hasAll(fields);
-    }
-
-    // Domain Validators
-    function isValidRestaurant() {
-      return hasRequiredFields(['slug', 'name', 'ownerUid', 'isActive']) &&
-             request.resource.data.slug is string && request.resource.data.slug.size() > 0 &&
-             request.resource.data.name is string && request.resource.data.name.size() > 0 &&
-             request.resource.data.ownerUid is string &&
-             request.resource.data.isActive is bool;
-    }
-
-    function isValidCategory() {
-      return hasRequiredFields(['name', 'order']) &&
-             request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 100 &&
-             request.resource.data.order is number;
-    }
-
-    function isValidProduct() {
-      return hasRequiredFields(['name', 'price', 'categoryId', 'isActive']) &&
-             request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 150 &&
-             request.resource.data.price is number && request.resource.data.price >= 0 &&
-             request.resource.data.categoryId is string && request.resource.data.categoryId.size() > 0 &&
-             request.resource.data.isActive is bool;
-    }
-
-    function isValidSettings() {
-      return hasRequiredFields(['whatsappNumber']) &&
-             request.resource.data.whatsappNumber is string && request.resource.data.whatsappNumber.size() > 0 && request.resource.data.whatsappNumber.size() < 50;
-    }
-
-    // Rules
+    // Regras para a coleção principal de Restaurantes
     match /restaurants/{restaurantId} {
-      allow read: if true; // Permite leitura pública para vitrine
-      allow create: if isAuthenticated() && isValidRestaurant() && isNewRestaurantOwner();
-      allow update: if isRestaurantOwner(restaurantId) && isValidRestaurant();
-      allow delete: if false; // Por segurança, não permite deletar restaurante via client
-
+      // Qualquer pessoa pode ler os dados básicos do restaurante (vitrine)
+      allow read: if true;
+      
+      // Apenas usuários logados podem criar um restaurante
+      allow create: if isAuthenticated() && request.resource.data.ownerUid == request.auth.uid;
+      
+      // Apenas o dono pode atualizar
+      allow update: if isRestaurantOwner(restaurantId);
+      
+      // Subcoleções (Produtos, Categorias, Configurações, Cupons, Pedidos, Clientes)
+      
       match /categories/{categoryId} {
         allow read: if true;
-        allow create: if isRestaurantOwner(restaurantId) && isValidCategory();
-        allow update: if isRestaurantOwner(restaurantId) && isValidCategory();
-        allow delete: if isRestaurantOwner(restaurantId);
+        allow write: if isRestaurantOwner(restaurantId);
       }
 
       match /products/{productId} {
         allow read: if true;
-        allow create: if isRestaurantOwner(restaurantId) && isValidProduct();
-        allow update: if isRestaurantOwner(restaurantId) && isValidProduct();
-        allow delete: if isRestaurantOwner(restaurantId);
+        allow write: if isRestaurantOwner(restaurantId);
       }
 
       match /settings/{settingId} {
         allow read: if true;
-        allow create: if isRestaurantOwner(restaurantId) && isValidSettings();
-        allow update: if isRestaurantOwner(restaurantId) && isValidSettings();
+        allow write: if isRestaurantOwner(restaurantId);
+      }
+
+      match /coupons/{couponId} {
+        // Permitimos leitura para qualquer um (necessário para o checkout validar o cupom)
+        allow read: if true;
+        // Apenas o dono pode gerenciar (criar, editar, deletar)
+        allow write: if isRestaurantOwner(restaurantId);
+      }
+
+      match /orders/{orderId} {
+        allow create: if true;
+        allow read, update, delete: if isRestaurantOwner(restaurantId);
+      }
+
+      match /customers/{customerId} {
+        // Clientes podem ser criados/lidos por qualquer um (para cashback no checkout)
+        allow read, create, update: if true;
+        // Apenas o dono pode deletar
         allow delete: if isRestaurantOwner(restaurantId);
       }
     }
-
-    // Manter suporte temporário para coleções na raiz durante a migração (Opcional)
-    match /categories/{categoryId} {
-      allow read: if true;
-      allow write: if isAuthenticated() && (request.auth.token.email == "propagoumkd@gmail.com" || request.auth.token.email == "adm01@admin.com");
-    }
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if isAuthenticated() && (request.auth.token.email == "propagoumkd@gmail.com" || request.auth.token.email == "adm01@admin.com");
-    }
-    match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isAuthenticated() && (request.auth.token.email == "propagoumkd@gmail.com" || request.auth.token.email == "adm01@admin.com");
-    }
+    
+    // Manter suporte para coleções legadas
+    match /categories/{categoryId} { allow read, write: if isAuthenticated(); }
+    match /products/{productId} { allow read, write: if isAuthenticated(); }
+    match /settings/{settingId} { allow read, write: if isAuthenticated(); }
   }
 }

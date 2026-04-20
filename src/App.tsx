@@ -8,8 +8,11 @@ import { Home } from './pages/Home';
 import { Menu } from './pages/Menu';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/admin/Dashboard';
+import { Orders } from './pages/admin/Orders';
 import { Categories } from './pages/admin/Categories';
 import { Products } from './pages/admin/Products';
+import { Customers } from './pages/admin/Customers';
+import { Coupons } from './pages/admin/Coupons';
 import { Settings } from './pages/admin/Settings';
 import { Onboarding } from './pages/admin/Onboarding';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -24,7 +27,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             {/* Main Landing / Redirect (Optional) */}
-            <Route path="/" element={<Navigate to="/acaiteria-do-jorginho" replace />} />
+            <Route path="/" element={<Navigate to="/hamburgueriadoze" replace />} />
 
             {/* Public Routes with Tenant Isolation */}
             <Route path="/:restaurantSlug" element={
@@ -48,9 +51,12 @@ export default function App() {
               </AdminProvider>
             }>
               <Route index element={<Dashboard />} />
+              <Route path="orders" element={<Orders />} />
               <Route path="onboarding" element={<Onboarding />} />
               <Route path="categories" element={<Categories />} />
               <Route path="products" element={<Products />} />
+              <Route path="customers" element={<Customers />} />
+              <Route path="coupons" element={<Coupons />} />
               <Route path="settings" element={<Settings />} />
             </Route>
 

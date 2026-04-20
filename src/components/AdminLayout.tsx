@@ -3,7 +3,7 @@ import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdmin } from '../contexts/AdminContext';
 import { ThemeController } from './ThemeController';
-import { LayoutDashboard, Package, Tags, Settings as SettingsIcon, LogOut, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Package, Tags, Settings as SettingsIcon, LogOut, ExternalLink, ShoppingCart, Users, Ticket } from 'lucide-react';
 
 export function AdminLayout() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -25,8 +25,11 @@ export function AdminLayout() {
 
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Painel' },
+    { path: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
     { path: '/admin/categories', icon: Tags, label: 'Categorias' },
     { path: '/admin/products', icon: Package, label: 'Produtos' },
+    { path: '/admin/customers', icon: Users, label: 'Clientes & Fidelidade' },
+    { path: '/admin/coupons', icon: Ticket, label: 'Cupons' },
     { path: '/admin/settings', icon: SettingsIcon, label: 'Configurações' },
   ];
 

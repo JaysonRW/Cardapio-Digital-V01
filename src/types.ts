@@ -17,6 +17,20 @@ export interface Restaurant {
   updatedAt: any;
 }
 
+export interface ProductOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface OptionGroup {
+  id: string;
+  name: string;
+  minOptions: number;
+  maxOptions: number;
+  options: ProductOption[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -26,6 +40,43 @@ export interface Product {
   categoryId: string;
   isPromotion?: boolean;
   isActive: boolean;
+  isUpsell?: boolean;
+  optionGroups?: OptionGroup[];
+}
+
+export interface LoyaltyBenefit {
+  id: string;
+  title: string;
+  milestone: number;
+}
+
+export interface LoyaltySettings {
+  isActive: boolean;
+  rules?: string[];
+  faqs?: { question: string; answer: string }[];
+  benefits: LoyaltyBenefit[];
+  cashbackEnabled?: boolean;
+  cashbackPercentage?: number;
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  minOrderValue?: number;
+  isActive: boolean;
+  expiresAt?: any;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  whatsapp: string;
+  lastOrderAt: any;
+  totalOrders: number;
+  totalSpent: number;
+  cashbackBalance?: number;
 }
 
 export interface Settings {
@@ -61,8 +112,50 @@ export interface Settings {
   pickupTime?: string;
   enableReservations?: boolean;
   reservationEnvironments?: string;
+  loyaltyProgram?: LoyaltySettings;
+}
+
+export interface SelectedOption {
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  optionName: string;
+  price: number;
 }
 
 export interface CartItem extends Product {
   quantity: number;
+  selectedOptions?: SelectedOption[];
+  cartId: string;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string;
+  selectedOptions?: SelectedOption[];
+}
+
+export interface Order {
+  id: string;
+  customer: {
+    name: string;
+    whatsapp?: string;
+    address: string;
+    orderType: 'delivery' | 'pickup';
+    paymentMethod: string;
+    notes?: string;
+  };
+  items: OrderItem[];
+  totalPrice: number;
+  discountAmount?: number;
+  cashbackUsed?: number;
+  cashbackEarned?: number;
+  couponCode?: string;
+  totalItems: number;
+  status: 'pending' | 'preparing' | 'on_the_way' | 'completed' | 'cancelled';
+  createdAt: any;
+  updatedAt: any;
 }

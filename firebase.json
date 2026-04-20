@@ -1,4 +1,9 @@
 {
+  "firestore": {
+    "database": "ai-studio-f2ddc861-435e-4187-b4a4-89f025a93717",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "emulators": {
     "dataconnect": {
       "dataDir": "dataconnect/.dataconnect/pgliteData"

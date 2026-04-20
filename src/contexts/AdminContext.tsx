@@ -28,6 +28,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      console.log('Fetching restaurant for user:', user.uid);
       const q = query(
         collection(db, 'restaurants'),
         where('ownerUid', '==', user.uid),
@@ -37,7 +38,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       
       if (!querySnapshot.empty) {
         const restaurantDoc = querySnapshot.docs[0];
-        setRestaurant({ id: restaurantDoc.id, ...restaurantDoc.data() } as Restaurant);
+        const data = restaurantDoc.data();
+        console.log('Restaurant found:', restaurantDoc.id, data);
+        setRestaurant({ id: restaurantDoc.id, ...data } as Restaurant);
 
         // Escuta as configurações em tempo real para o admin
         const unsubSettings = onSnapshot(
@@ -50,12 +53,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
             }
           },
           (error) => {
-            console.error('Error fetching admin settings:', error);
+            console.error('Error fetching admin settings snapshot:', error);
           }
         );
 
         return () => unsubSettings();
       } else {
+        console.log('No restaurant found for user:', user.uid);
         setRestaurant(null);
         setSettings(null);
       }
@@ -74,7 +78,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   return (
-    <AdminContext.Provider value={{ restaurant, settings, loading, refreshRestaurant: fetchRestaurant }}>
+    <AdminContext.Provider value={{ restaurant, settings, loading, refreshRestaurant: async () => { await fetchRestaurant(); } }}>
       {children}
     </AdminContext.Provider>
   );

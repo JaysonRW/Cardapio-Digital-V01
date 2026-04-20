@@ -4,7 +4,7 @@ import { db } from '../../firebase';
 import { Settings as SettingsType } from '../../types';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Save, Database, Palette } from 'lucide-react';
+import { Save, Database, Palette, Gift } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { ImageUpload } from '../../components/ImageUpload';
 import {
@@ -61,6 +61,8 @@ export function Settings() {
     pickupTime: '',
     enableReservations: false,
     reservationEnvironments: '',
+    cashbackEnabled: false,
+    cashbackPercentage: 0,
   };
   const [formData, setFormData] = useState(initialForm);
   const hasInvalidPrimaryColor =
@@ -112,6 +114,8 @@ export function Settings() {
           pickupTime: data.pickupTime || '',
           enableReservations: data.enableReservations || false,
           reservationEnvironments: data.reservationEnvironments || '',
+          cashbackEnabled: data.cashbackEnabled || false,
+          cashbackPercentage: data.cashbackPercentage || 0,
         });
       } else {
         setSettings(null);
@@ -502,6 +506,50 @@ export function Settings() {
                 value={formData.facebookUrl} onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
                 placeholder="https://facebook.com/seu.restaurante"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Cashback e Fidelidade */}
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
+          <div className="flex items-start gap-3 border-b border-zinc-100 pb-4 mb-6">
+            <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0">
+              <Gift size={20} />
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-zinc-900">Cashback e Fidelidade</h2>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.cashbackEnabled} onChange={(e) => setFormData({ ...formData, cashbackEnabled: e.target.checked })}
+                    className="rounded border-zinc-300 text-amber-500 focus:ring-amber-500 w-5 h-5"
+                  />
+                  <span className="text-sm font-bold text-zinc-700">Ativar Cashback</span>
+                </label>
+              </div>
+              <p className="mt-1 text-sm text-zinc-500">
+                Recompense seus clientes fiéis com crédito para a próxima compra.
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Porcentagem de Cashback (%)</label>
+              <div className="relative">
+                <input
+                  type="number" min="0" max="100" step="0.1"
+                  disabled={!formData.cashbackEnabled}
+                  className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3 text-zinc-900 text-sm disabled:bg-zinc-50 disabled:text-zinc-400"
+                  value={formData.cashbackPercentage} onChange={(e) => setFormData({ ...formData, cashbackPercentage: Number(e.target.value) })}
+                  placeholder="Ex: 5"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">%</span>
+              </div>
+              <p className="mt-1.5 text-xs text-zinc-500">
+                O valor será creditado na conta do cliente após a conclusão do pedido.
+              </p>
             </div>
           </div>
         </div>
