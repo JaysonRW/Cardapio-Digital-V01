@@ -1214,11 +1214,6 @@ export function Menu() {
         settings={settings?.loyaltyProgram}
         restaurantPhone={settings?.whatsappNumber}
         customerOrders={customerData?.totalOrders || 0}
-        onParticipate={() => {
-          setIsLoyaltyModalOpen(false);
-          // TODO: Implement participate logic (e.g. login/auth)
-          alert("Em breve! Sistema de autenticação para o programa de fidelidade em desenvolvimento.");
-        }}
       />
 
       {/* Modal de Opções do Produto */}

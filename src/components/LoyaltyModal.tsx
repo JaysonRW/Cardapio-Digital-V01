@@ -5,13 +5,12 @@ import { LoyaltySettings } from '../types';
 interface LoyaltyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onParticipate: () => void;
   settings?: LoyaltySettings;
   restaurantPhone?: string;
   customerOrders?: number;
 }
 
-export function LoyaltyModal({ isOpen, onClose, onParticipate, settings, restaurantPhone, customerOrders = 0 }: LoyaltyModalProps) {
+export function LoyaltyModal({ isOpen, onClose, settings, restaurantPhone, customerOrders = 0 }: LoyaltyModalProps) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -129,13 +128,6 @@ export function LoyaltyModal({ isOpen, onClose, onParticipate, settings, restaur
               </div>
             </div>
           )}
-          
-          <button 
-            onClick={onParticipate}
-            className="w-full max-w-xs bg-zinc-900 text-white py-4 px-6 rounded-2xl font-bold text-sm tracking-widest uppercase hover:bg-zinc-800 hover:-translate-y-1 transition-all shadow-lg hover:shadow-xl"
-          >
-            Entre e Participe
-          </button>
         </div>
 
         {/* Right Column - Benefits List */}
