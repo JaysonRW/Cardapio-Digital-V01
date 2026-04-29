@@ -35,7 +35,7 @@ Aplicação web de **cardápio digital** com:
 - Gerenciamento de:
   - Categorias (CRUD)
   - Produtos (CRUD, ativo/inativo e promoção)
-  - Configurações gerais (SEO, banners, dados do restaurante, Pixel/Tag)
+  - Configurações gerais (SEO, **banners do cardápio em carrossel**, banner promocional, imagem Hero/Home, dados do restaurante, Pixel/Tag)
   - Seed de dados de exemplo (botão “Adicionar Cardápio de Teste”)
 
 ## Stack
@@ -60,24 +60,36 @@ As rotas estão definidas em [App.tsx](file:///c:/Users/jayso/Documents/TRAE/Car
 
 ## Modelo de dados
 
-O Firestore assume estas coleções:
+O Firestore está organizado por restaurante (tenant), seguindo este padrão:
 
-- `categories`
-  - `name` (string)
-  - `order` (number)
-- `products`
-  - `name` (string)
-  - `description` (string, opcional)
-  - `price` (number)
-  - `imageUrl` (string, opcional)
-  - `categoryId` (string)
-  - `isPromotion` (boolean, opcional)
-  - `isActive` (boolean)
-- `settings` (documento `general`)
-  - `whatsappNumber` (string)
-  - e campos opcionais de SEO, banners e dados do restaurante
+- `restaurants/{restaurantId}`
+  - `settings/general`
+    - `whatsappNumber` (string)
+    - `restaurantName`, `restaurantLogoUrl`, `restaurantHours`, `restaurantAddress`, etc.
+    - `heroImageUrl` (string, opcional)
+    - `promoBannerIsActive`, `promoBannerImageUrl`, `promoBannerLink` (opcionais)
+    - `menuBanners` (array opcional)
+      - `id` (string)
+      - `title` (string, opcional)
+      - `subtitle` (string, opcional)
+      - `imageUrl` (string)
+      - `link` (string, opcional)
+      - `isActive` (boolean)
+      - `order` (number)
+  - `categories/{categoryId}`
+    - `name` (string)
+    - `order` (number)
+  - `products/{productId}`
+    - `name` (string)
+    - `description` (string, opcional)
+    - `price` (number)
+    - `imageUrl` (string, opcional)
+    - `categoryId` (string)
+    - `isPromotion` (boolean, opcional)
+    - `isUpsell` (boolean, opcional)
+    - `isActive` (boolean)
 
-Regras e validações estão em [firestore.rules](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/firestore.rules).
+Regras e validações estão em [firestore.rules](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/firestore.rules).
 
 ## Rodar localmente
 
@@ -115,7 +127,7 @@ npm run lint
 
 ## Variáveis de ambiente
 
-Este projeto inclui um [.env.example](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/.env.example) com:
+Este projeto inclui um [.env.example](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/.env.example) com:
 
 - `GEMINI_API_KEY`
 - `APP_URL`
@@ -124,15 +136,16 @@ Observação: o app atual (Cardápio Digital) não usa Gemini diretamente no có
 
 ## Deploy
 
-- Vercel (SPA) com rewrite já configurado em [vercel.json](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/vercel.json)
+- Vercel (SPA) com rewrite já configurado em [vercel.json](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/vercel.json)
 - Firebase Hosting (opcional), usando as mesmas regras do Firestore
 
-Guia detalhado em [/docs/DEPLOY.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/DEPLOY.md).
+Guia detalhado em [/docs/DEPLOY.md](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/docs/DEPLOY.md).
 
 ## Documentação completa
 
-- Operação (admin + pedidos WhatsApp): [/docs/OPERACAO.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/OPERACAO.md)
-- Firebase (dados, regras e Auth): [/docs/FIREBASE.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/FIREBASE.md)
-- Arquitetura do front-end: [/docs/ARQUITETURA.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/ARQUITETURA.md)
-- Deploy (Vercel + Firebase Hosting): [/docs/DEPLOY.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/DEPLOY.md)
-- Troubleshooting: [/docs/TROUBLESHOOTING.md](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/docs/TROUBLESHOOTING.md)
+- Manual de imagens (tamanhos oficiais): [/docs/MANUAL_DE_IMAGENS.md](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/docs/MANUAL_DE_IMAGENS.md)
+- Operação (admin + pedidos WhatsApp): [/docs/OPERACAO.md](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/docs/OPERACAO.md)
+- Firebase (dados, regras e Auth): [/docs/FIREBASE.md](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/docs/FIREBASE.md)
+- Arquitetura do front-end: [/docs/ARQUITETURA.md](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/docs/ARQUITETURA.md)
+- Deploy (Vercel + Firebase Hosting): [/docs/DEPLOY.md](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/docs/DEPLOY.md)
+- Troubleshooting: [/docs/TROUBLESHOOTING.md](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/docs/TROUBLESHOOTING.md)

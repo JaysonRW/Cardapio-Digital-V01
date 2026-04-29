@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc, writeBatch, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { Settings as SettingsType } from '../../types';
+import { Settings as SettingsType, MenuBanner } from '../../types';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Save, Database, Palette, Gift } from 'lucide-react';
+import { Save, Database, Palette, Gift, Plus, Trash2, Layout, Link as LinkIcon, MoveUp, MoveDown } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
 import { ImageUpload } from '../../components/ImageUpload';
 import {
@@ -63,6 +63,7 @@ export function Settings() {
     reservationEnvironments: '',
     cashbackEnabled: false,
     cashbackPercentage: 0,
+    menuBanners: [] as MenuBanner[],
   };
   const [formData, setFormData] = useState(initialForm);
   const hasInvalidPrimaryColor =
@@ -116,6 +117,7 @@ export function Settings() {
           reservationEnvironments: data.reservationEnvironments || '',
           cashbackEnabled: data.cashbackEnabled || false,
           cashbackPercentage: data.cashbackPercentage || 0,
+          menuBanners: data.menuBanners || [],
         });
       } else {
         setSettings(null);
@@ -151,6 +153,45 @@ export function Settings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAddBanner = () => {
+    const newBanner = {
+      id: crypto.randomUUID(),
+      title: '',
+      subtitle: '',
+      imageUrl: '',
+      link: '',
+      isActive: true,
+      order: formData.menuBanners.length,
+    };
+    setFormData({ ...formData, menuBanners: [...formData.menuBanners, newBanner] });
+  };
+
+  const handleRemoveBanner = (id: string) => {
+    setFormData({
+      ...formData,
+      menuBanners: formData.menuBanners.filter((b) => b.id !== id),
+    });
+  };
+
+  const handleUpdateBanner = (id: string, updates: Partial<MenuBanner>) => {
+    setFormData({
+      ...formData,
+      menuBanners: formData.menuBanners.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+    });
+  };
+
+  const handleMoveBanner = (index: number, direction: 'up' | 'down') => {
+    const newBanners = [...formData.menuBanners];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newBanners.length) return;
+
+    [newBanners[index], newBanners[targetIndex]] = [newBanners[targetIndex], newBanners[index]];
+    
+    // Update order property
+    const orderedBanners = newBanners.map((b, i) => ({ ...b, order: i }));
+    setFormData({ ...formData, menuBanners: orderedBanners });
   };
 
   const handleSeedDatabase = async () => {
@@ -634,44 +675,132 @@ export function Settings() {
           </div>
         </div>
 
-        {/* Banner do Cardápio */}
+        {/* Banners do Cardápio (Novo) */}
         <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
-          <div className="flex justify-between items-center border-b border-zinc-100 pb-3 mb-6">
-            <h2 className="text-lg font-semibold text-zinc-900">Banner do Cardápio</h2>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.bannerIsActive} onChange={(e) => setFormData({ ...formData, bannerIsActive: e.target.checked })}
-                className="rounded border-zinc-300 text-orange-500 focus:ring-orange-500"
-              />
-              <span className="text-sm font-medium text-zinc-700">Ativar Banner</span>
-            </label>
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center shrink-0">
+                <Layout size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900">Banners do Cardápio</h2>
+                <p className="text-sm text-zinc-500">Adicione banners rotativos para destacar promoções e avisos.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddBanner}
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 flex items-center gap-2 font-bold text-sm transition-colors"
+            >
+              <Plus size={18} />
+              Adicionar Banner
+            </button>
           </div>
-          <div className="grid grid-cols-1 gap-5">
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Título do Banner</label>
-              <input
-                type="text"
-                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
-                value={formData.bannerTitle} onChange={(e) => setFormData({ ...formData, bannerTitle: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Subtítulo</label>
-              <input
-                type="text"
-                className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2.5 px-3 text-zinc-900 text-sm"
-                value={formData.bannerSubtitle} onChange={(e) => setFormData({ ...formData, bannerSubtitle: e.target.value })}
-              />
-            </div>
-            <div>
-              <ImageUpload
-                value={formData.bannerImageUrl}
-                onChange={(url) => setFormData({ ...formData, bannerImageUrl: url })}
-                label="Imagem de Fundo do Banner"
-                folder={`restaurants/${userId}/${tenantId}/settings`}
-              />
-            </div>
+
+          <div className="space-y-6">
+            {formData.menuBanners.length === 0 ? (
+              <div className="text-center py-10 bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-200">
+                <p className="text-zinc-500 text-sm">Nenhum banner cadastrado. Clique em "Adicionar Banner" para começar.</p>
+              </div>
+            ) : (
+              formData.menuBanners
+                .sort((a, b) => a.order - b.order)
+                .map((banner, index) => (
+                  <div key={banner.id} className="p-6 bg-zinc-50 rounded-2xl border border-zinc-200 relative group">
+                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveBanner(index, 'up')}
+                        disabled={index === 0}
+                        className="p-1.5 bg-white border border-zinc-200 rounded-lg shadow-sm hover:bg-zinc-50 disabled:opacity-30"
+                      >
+                        <MoveUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveBanner(index, 'down')}
+                        disabled={index === formData.menuBanners.length - 1}
+                        className="p-1.5 bg-white border border-zinc-200 rounded-lg shadow-sm hover:bg-zinc-50 disabled:opacity-30"
+                      >
+                        <MoveDown size={14} />
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-start mb-6">
+                      <h3 className="font-bold text-zinc-900 flex items-center gap-2">
+                        Banner #{index + 1}
+                        {!banner.isActive && <span className="text-[10px] bg-zinc-200 text-zinc-600 px-2 py-0.5 rounded-full uppercase">Inativo</span>}
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={banner.isActive}
+                            onChange={(e) => handleUpdateBanner(banner.id, { isActive: e.target.checked })}
+                            className="rounded border-zinc-300 text-orange-500 focus:ring-orange-500"
+                          />
+                          <span className="text-xs font-medium text-zinc-600">Ativo</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBanner(banner.id)}
+                          className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Título (Opcional)</label>
+                          <input
+                            type="text"
+                            className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2 px-3 text-sm"
+                            value={banner.title || ''}
+                            onChange={(e) => handleUpdateBanner(banner.id, { title: e.target.value })}
+                            placeholder="Ex: Super Promoção de Burger"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Subtítulo (Opcional)</label>
+                          <input
+                            type="text"
+                            className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2 px-3 text-sm"
+                            value={banner.subtitle || ''}
+                            onChange={(e) => handleUpdateBanner(banner.id, { subtitle: e.target.value })}
+                            placeholder="Ex: Apenas nesta terça-feira"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Link de Destino (Opcional)</label>
+                          <div className="relative">
+                            <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                            <input
+                              type="text"
+                              className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 py-2 pl-9 pr-3 text-sm"
+                              value={banner.link || ''}
+                              onChange={(e) => handleUpdateBanner(banner.id, { link: e.target.value })}
+                              placeholder="URL ou slug de categoria"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <ImageUpload
+                          value={banner.imageUrl}
+                          onChange={(url) => handleUpdateBanner(banner.id, { imageUrl: url })}
+                          label="Imagem do Banner"
+                          folder={`restaurants/${userId}/${tenantId}/banners`}
+                        />
+                        <p className="mt-1.5 text-[10px] text-zinc-500">Recomendado: 1200x400px (Proporção 3:1)</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+            )}
           </div>
         </div>
 
@@ -696,7 +825,9 @@ export function Settings() {
                 label="Imagem Promocional"
                 folder={`restaurants/${userId}/${tenantId}/settings`}
               />
-              <p className="mt-1.5 text-sm text-zinc-500">Será exibido logo abaixo do banner principal no catálogo.</p>
+              <p className="mt-1.5 text-sm text-zinc-500">
+                Será exibido logo abaixo do banner principal no catálogo. Recomendado: 1200x300px (Proporção 4:1).
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1.5">Link (Opcional)</label>

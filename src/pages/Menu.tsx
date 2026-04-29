@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { collection, onSnapshot, query, orderBy, doc, addDoc, setDoc, increment, serverTimestamp, getDoc, getDocs, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Product, Category, Settings, OrderItem, SelectedOption } from '../types';
@@ -44,6 +45,7 @@ export function Menu() {
   const [availableCashback, setAvailableCashback] = useState(0);
   const [useCashback, setUseCashback] = useState(false);
   const [customerData, setCustomerData] = useState<any>(null);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   
   const { items, addItem, removeItem, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
 
@@ -243,6 +245,17 @@ export function Menu() {
 
     return () => clearTimeout(timer);
   }, [customerInfo.whatsapp, tenantId]);
+
+  useEffect(() => {
+    const activeBanners = settings?.menuBanners?.filter(b => b.isActive) || [];
+    if (activeBanners.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentBannerIndex(prev => (prev + 1) % activeBanners.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [settings?.menuBanners]);
 
   const calculateDiscount = () => {
     let discount = 0;
@@ -588,16 +601,83 @@ export function Menu() {
         </div>
       </div>
 
-      {/* Banner de Promoção (Hero) */}
-      {!searchQuery && settings?.promoBannerIsActive && settings?.promoBannerImageUrl && (
+      {/* Banner do Cardápio (Carousel) */}
+      {!searchQuery && settings?.menuBanners && settings.menuBanners.filter(b => b.isActive).length > 0 && (
         <div className="max-w-4xl mx-auto px-4 mt-6">
+          <div className="relative overflow-hidden rounded-3xl shadow-lg aspect-[3/1] bg-zinc-100">
+            <AnimatePresence mode="wait">
+              {settings.menuBanners
+                .filter(b => b.isActive)
+                .sort((a, b) => a.order - b.order)
+                .map((banner, index) => index === currentBannerIndex && (
+                  <motion.div
+                    key={banner.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    className="absolute inset-0"
+                  >
+                    {banner.link ? (
+                      <a href={banner.link} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                        <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="w-full h-full object-cover" />
+                        {(banner.title || banner.subtitle) && (
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-6">
+                            {banner.title && <h3 className="text-white text-xl md:text-2xl font-bold leading-tight">{banner.title}</h3>}
+                            {banner.subtitle && <p className="text-white/80 text-sm md:text-base mt-1">{banner.subtitle}</p>}
+                          </div>
+                        )}
+                      </a>
+                    ) : (
+                      <div className="w-full h-full">
+                        <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="w-full h-full object-cover" />
+                        {(banner.title || banner.subtitle) && (
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-6">
+                            {banner.title && <h3 className="text-white text-xl md:text-2xl font-bold leading-tight">{banner.title}</h3>}
+                            {banner.subtitle && <p className="text-white/80 text-sm md:text-base mt-1">{banner.subtitle}</p>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+
+            {/* Pagination Dots */}
+            {settings.menuBanners.filter(b => b.isActive).length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                {settings.menuBanners.filter(b => b.isActive).map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentBannerIndex(idx)}
+                    className={`h-1.5 rounded-full transition-all ${idx === currentBannerIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Banner de Promoção Secundário (Catálogo) */}
+      {!searchQuery && settings?.promoBannerIsActive && settings?.promoBannerImageUrl && (
+        <div className="max-w-4xl mx-auto px-4 mt-4">
           {settings.promoBannerLink ? (
-            <a href={settings.promoBannerLink} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-shadow">
-              <img src={settings.promoBannerImageUrl} alt="Promoção Especial" className="w-full h-auto object-cover max-h-64 sm:max-h-80" />
+            <a
+              href={settings.promoBannerLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="aspect-[4/1] w-full">
+                <img src={settings.promoBannerImageUrl} alt="Promoção Especial" className="w-full h-full object-cover" />
+              </div>
             </a>
           ) : (
-            <div className="overflow-hidden rounded-2xl shadow-md">
-              <img src={settings.promoBannerImageUrl} alt="Promoção Especial" className="w-full h-auto object-cover max-h-64 sm:max-h-80" />
+            <div className="overflow-hidden rounded-2xl shadow-sm">
+              <div className="aspect-[4/1] w-full">
+                <img src={settings.promoBannerImageUrl} alt="Promoção Especial" className="w-full h-full object-cover" />
+              </div>
             </div>
           )}
         </div>

@@ -59,6 +59,16 @@ export interface LoyaltySettings {
   cashbackPercentage?: number;
 }
 
+export interface MenuBanner {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  imageUrl: string;
+  link?: string;
+  isActive: boolean;
+  order: number;
+}
+
 export interface Coupon {
   id: string;
   code: string;
@@ -113,6 +123,7 @@ export interface Settings {
   enableReservations?: boolean;
   reservationEnvironments?: string;
   loyaltyProgram?: LoyaltySettings;
+  menuBanners?: MenuBanner[];
 }
 
 export interface SelectedOption {

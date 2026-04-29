@@ -15,7 +15,8 @@ A interface que o cliente final acessa através do link exclusivo do restaurante
 * **Menu de Categorias Fixo:** Uma barra de navegação no topo que acompanha a rolagem da tela, permitindo pular rapidamente para seções específicas (ex: Lanches, Bebidas, Sobremesas) com ícones intuitivos.
 
 ### 🍔 Exibição de Produtos
-* **Banners Promocionais:** Espaço para um banner de destaque no topo do cardápio (opcional).
+* **Banners do Cardápio (Carrossel):** Espaço para múltiplos banners rotativos no topo do cardápio (opcional).
+* **Banner de Promoção (Secundário):** Um banner extra abaixo do carrossel (opcional, com link).
 * **Carrossel de Destaques:** Uma seção horizontal que destaca produtos marcados como "Promoção", exibindo foto, nome e preço.
 * **Lista de Produtos:** Produtos organizados por categoria. Cada item exibe:
   * Foto do produto.
@@ -111,9 +112,16 @@ Onde o lojista personaliza a cara do seu negócio e suas regras de operação.
   * O sistema calcula e credita o saldo automaticamente para o cliente usar na próxima compra.
 * **Personalização Visual:**
   * Temas e cores (ajuste da cor principal do cardápio para combinar com a marca).
-  * Imagem e textos de capa (Banner principal).
-  * Configuração de um banner promocional extra (com opção de link externo).
+  * Imagem de destaque da Home (Imagem de Fundo / Hero).
+  * Banners do cardápio (carrossel com múltiplos banners, com título/subtítulo/link por banner).
+  * Banner promocional secundário (opcional, com link externo).
 * **Marketing e SEO:**
   * Campos para inserir Pixel do Facebook e Google Analytics.
   * Título e descrição de SEO (como a loja aparece nas buscas do Google e ao compartilhar o link no WhatsApp).
 * **Links de Redes Sociais:** Inserção de links para Instagram e Facebook.
+
+---
+
+## Anexo: tamanhos de imagens (padrão oficial)
+
+Para evitar cortes e garantir qualidade, use os tamanhos oficiais descritos em: [MANUAL_DE_IMAGENS.md](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/docs/MANUAL_DE_IMAGENS.md).
