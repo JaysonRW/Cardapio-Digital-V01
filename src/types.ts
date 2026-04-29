@@ -56,7 +56,9 @@ export interface LoyaltySettings {
   faqs?: { question: string; answer: string }[];
   benefits: LoyaltyBenefit[];
   cashbackEnabled?: boolean;
-  cashbackPercentage?: number;
+  cashbackType?: 'percentage' | 'fixed';
+  cashbackValue?: number;
+  cashbackPercentage?: number; // Mantido para compatibilidade
 }
 
 export interface MenuBanner {

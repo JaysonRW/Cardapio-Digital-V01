@@ -56,7 +56,7 @@ Aplicação web de **cardápio digital** com:
   - `/admin/products` → Produtos
   - `/admin/settings` → Configurações
 
-As rotas estão definidas em [App.tsx](file:///c:/Users/jayso/Documents/TRAE/Cardapio-Digital-V01/src/App.tsx).
+As rotas estão definidas em [App.tsx](file:///c:/Users/jayso/Documents/TRAE/SITE-Cardapio-Digital-V01/src/App.tsx).
 
 ## Modelo de dados
 

@@ -63,7 +63,15 @@ export function Settings() {
     reservationEnvironments: '',
     cashbackEnabled: false,
     cashbackPercentage: 0,
+    cashbackType: 'percentage' as 'percentage' | 'fixed',
+    cashbackValue: 0,
     menuBanners: [] as MenuBanner[],
+    loyaltyProgram: {
+      isActive: true,
+      benefits: [],
+      rules: [],
+      faqs: [],
+    },
   };
   const [formData, setFormData] = useState(initialForm);
   const hasInvalidPrimaryColor =
@@ -115,9 +123,17 @@ export function Settings() {
           pickupTime: data.pickupTime || '',
           enableReservations: data.enableReservations || false,
           reservationEnvironments: data.reservationEnvironments || '',
-          cashbackEnabled: data.cashbackEnabled || false,
-          cashbackPercentage: data.cashbackPercentage || 0,
+          cashbackEnabled: data.loyaltyProgram?.cashbackEnabled || data.cashbackEnabled || false,
+          cashbackPercentage: data.loyaltyProgram?.cashbackPercentage || data.cashbackPercentage || 0,
+          cashbackType: data.loyaltyProgram?.cashbackType || data.cashbackType || 'percentage',
+          cashbackValue: data.loyaltyProgram?.cashbackValue ?? (data.loyaltyProgram?.cashbackPercentage || data.cashbackPercentage || 0),
           menuBanners: data.menuBanners || [],
+          loyaltyProgram: data.loyaltyProgram || {
+            isActive: true,
+            benefits: [],
+            rules: [],
+            faqs: [],
+          },
         });
       } else {
         setSettings(null);
@@ -139,11 +155,26 @@ export function Settings() {
     setSaving(true);
     try {
       const primaryColorOverride = formData.primaryColorOverride.trim();
+      const { 
+        cashbackEnabled, 
+        cashbackPercentage, 
+        cashbackType, 
+        cashbackValue, 
+        ...rest 
+      } = formData;
+
       const payload = {
-        ...formData,
+        ...rest,
         themePreset: normalizeThemePreset(formData.themePreset),
         themeIntensity: normalizeThemeIntensity(formData.themeIntensity),
         primaryColorOverride: isValidHexColor(primaryColorOverride) ? primaryColorOverride : '',
+        loyaltyProgram: {
+          ...formData.loyaltyProgram,
+          cashbackEnabled,
+          cashbackPercentage,
+          cashbackType,
+          cashbackValue,
+        }
       };
 
       await setDoc(doc(db, 'restaurants', tenantId, 'settings', 'general'), payload, { merge: true });
@@ -192,6 +223,43 @@ export function Settings() {
     // Update order property
     const orderedBanners = newBanners.map((b, i) => ({ ...b, order: i }));
     setFormData({ ...formData, menuBanners: orderedBanners });
+  };
+
+  const handleAddLoyaltyBenefit = () => {
+    const newBenefit = {
+      id: crypto.randomUUID(),
+      title: '',
+      milestone: 1,
+    };
+    setFormData({
+      ...formData,
+      loyaltyProgram: {
+        ...formData.loyaltyProgram,
+        benefits: [...(formData.loyaltyProgram.benefits || []), newBenefit],
+      },
+    });
+  };
+
+  const handleRemoveLoyaltyBenefit = (id: string) => {
+    setFormData({
+      ...formData,
+      loyaltyProgram: {
+        ...formData.loyaltyProgram,
+        benefits: formData.loyaltyProgram.benefits.filter((b) => b.id !== id),
+      },
+    });
+  };
+
+  const handleUpdateLoyaltyBenefit = (id: string, updates: any) => {
+    setFormData({
+      ...formData,
+      loyaltyProgram: {
+        ...formData.loyaltyProgram,
+        benefits: formData.loyaltyProgram.benefits.map((b) =>
+          b.id === id ? { ...b, ...updates } : b
+        ),
+      },
+    });
   };
 
   const handleSeedDatabase = async () => {
@@ -559,43 +627,148 @@ export function Settings() {
             </div>
             <div className="flex-1">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-zinc-900">Cashback e Fidelidade</h2>
+                <h2 className="text-lg font-semibold text-zinc-900">Programa de Fidelidade</h2>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.loyaltyProgram.isActive} 
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      loyaltyProgram: { ...formData.loyaltyProgram, isActive: e.target.checked } 
+                    })}
+                    className="rounded border-zinc-300 text-amber-500 focus:ring-amber-500 w-5 h-5"
+                  />
+                  <span className="text-sm font-bold text-zinc-700">Ativar Programa</span>
+                </label>
+              </div>
+              <p className="mt-1 text-sm text-zinc-500">
+                Configure recompensas por metas de pedidos e/ou sistema de cashback.
+              </p>
+            </div>
+          </div>
+
+          <div className={`space-y-8 transition-opacity ${formData.loyaltyProgram.isActive ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+            {/* Cashback Config */}
+            <div className="bg-zinc-50 p-6 rounded-2xl border border-zinc-100">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-md font-bold text-zinc-900">Sistema de Cashback</h3>
+                  {!formData.cashbackEnabled && <span className="text-[10px] bg-zinc-200 text-zinc-500 px-2 py-0.5 rounded-full uppercase">Desativado</span>}
+                </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.cashbackEnabled} onChange={(e) => setFormData({ ...formData, cashbackEnabled: e.target.checked })}
-                    className="rounded border-zinc-300 text-amber-500 focus:ring-amber-500 w-5 h-5"
+                    className="rounded border-zinc-300 text-amber-500 focus:ring-amber-500 w-4 h-4"
                   />
-                  <span className="text-sm font-bold text-zinc-700">Ativar Cashback</span>
+                  <span className="text-xs font-bold text-zinc-600">Ativar Cashback</span>
                 </label>
               </div>
-              <p className="mt-1 text-sm text-zinc-500">
-                Recompense seus clientes fiéis com crédito para a próxima compra.
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Tipo de Recompensa</label>
+                  <select
+                    disabled={!formData.cashbackEnabled}
+                    className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 py-2 px-3 text-zinc-900 text-sm disabled:bg-zinc-50 disabled:text-zinc-400"
+                    value={formData.cashbackType}
+                    onChange={(e) => setFormData({ ...formData, cashbackType: e.target.value as 'percentage' | 'fixed' })}
+                  >
+                    <option value="percentage">Porcentagem (%)</option>
+                    <option value="fixed">Valor Fixo (R$)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
+                    {formData.cashbackType === 'percentage' ? 'Porcentagem (%)' : 'Valor Fixo (R$)'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number" min="0" step="0.01"
+                      disabled={!formData.cashbackEnabled}
+                      className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 py-2 px-3 text-zinc-900 text-sm disabled:bg-zinc-50 disabled:text-zinc-400"
+                      value={formData.cashbackValue}
+                      onChange={(e) => setFormData({ ...formData, cashbackValue: Number(e.target.value) })}
+                      placeholder={formData.cashbackType === 'percentage' ? "Ex: 5" : "Ex: 2.00"}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">
+                      {formData.cashbackType === 'percentage' ? '%' : 'R$'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-zinc-500 leading-relaxed">
+                {formData.cashbackType === 'percentage' 
+                  ? 'O cashback será calculado sobre o valor final de cada pedido concluído.' 
+                  : 'Um valor fixo será creditado na carteira do cliente para cada pedido concluído.'}
               </p>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Porcentagem de Cashback (%)</label>
-              <div className="relative">
-                <input
-                  type="number" min="0" max="100" step="0.1"
-                  disabled={!formData.cashbackEnabled}
-                  className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 py-2.5 px-3 text-zinc-900 text-sm disabled:bg-zinc-50 disabled:text-zinc-400"
-                  value={formData.cashbackPercentage} onChange={(e) => setFormData({ ...formData, cashbackPercentage: Number(e.target.value) })}
-                  placeholder="Ex: 5"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">%</span>
+
+          <div className="mt-8 pt-8 border-t border-zinc-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-md font-bold text-zinc-900">Metas do Programa de Fidelidade</h3>
+                <p className="text-sm text-zinc-500">Defina prêmios baseados na quantidade de pedidos do cliente.</p>
               </div>
-              <p className="mt-1.5 text-xs text-zinc-500">
-                O valor será creditado na conta do cliente após a conclusão do pedido.
-              </p>
+              <button
+                type="button"
+                onClick={handleAddLoyaltyBenefit}
+                className="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 flex items-center gap-2 font-bold text-sm transition-colors shadow-sm"
+              >
+                <Plus size={18} />
+                Adicionar Meta
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {formData.loyaltyProgram.benefits.length === 0 ? (
+                <div className="text-center py-8 bg-zinc-50 rounded-xl border-2 border-dashed border-zinc-200">
+                  <p className="text-zinc-500 text-sm">Nenhuma meta cadastrada. Clique em "Adicionar Meta".</p>
+                </div>
+              ) : (
+                formData.loyaltyProgram.benefits
+                  .sort((a, b) => a.milestone - b.milestone)
+                  .map((benefit, index) => (
+                    <div key={benefit.id} className="flex flex-col sm:flex-row gap-4 p-4 bg-zinc-50 rounded-xl border border-zinc-200 relative group">
+                      <div className="flex-1">
+                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Título do Prêmio</label>
+                        <input
+                          type="text"
+                          className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 py-2 px-3 text-sm"
+                          value={benefit.title}
+                          onChange={(e) => handleUpdateLoyaltyBenefit(benefit.id, { title: e.target.value })}
+                          placeholder="Ex: Um refrigerante 2l grátis"
+                        />
+                      </div>
+                      <div className="w-full sm:w-32">
+                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">Qtd. Pedidos</label>
+                        <input
+                          type="number"
+                          min="1"
+                          className="block w-full rounded-lg border-zinc-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 py-2 px-3 text-sm"
+                          value={benefit.milestone}
+                          onChange={(e) => handleUpdateLoyaltyBenefit(benefit.id, { milestone: parseInt(e.target.value) || 1 })}
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLoyaltyBenefit(benefit.id)}
+                          className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+              )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Configurações de Reserva */}
+      {/* Configurações de Reserva */}
         <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-8">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3 mb-6">
             <h2 className="text-lg font-semibold text-zinc-900">Reservas de Mesa</h2>

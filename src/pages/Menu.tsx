@@ -299,8 +299,16 @@ export function Menu() {
       
       // Calculate cashback to be earned
       let cashbackEarned = 0;
-      if (settings?.loyaltyProgram?.cashbackEnabled && settings?.loyaltyProgram?.cashbackPercentage) {
-        cashbackEarned = finalPrice * (settings.loyaltyProgram.cashbackPercentage / 100);
+      const lp = settings?.loyaltyProgram;
+      if (lp?.cashbackEnabled) {
+        const type = lp.cashbackType || 'percentage';
+        const value = lp.cashbackValue ?? lp.cashbackPercentage ?? 0;
+        
+        if (type === 'fixed') {
+          cashbackEarned = value;
+        } else {
+          cashbackEarned = finalPrice * (value / 100);
+        }
       }
 
       const orderData = {
@@ -393,8 +401,16 @@ export function Menu() {
     message += `*TOTAL: ${formatCurrency(finalPrice)}*\n`;
 
     let cashbackEarned = 0;
-    if (settings?.loyaltyProgram?.cashbackEnabled && settings?.loyaltyProgram?.cashbackPercentage) {
-      cashbackEarned = finalPrice * (settings.loyaltyProgram.cashbackPercentage / 100);
+    const lpMessage = settings?.loyaltyProgram;
+    if (lpMessage?.cashbackEnabled) {
+      const type = lpMessage.cashbackType || 'percentage';
+      const value = lpMessage.cashbackValue ?? lpMessage.cashbackPercentage ?? 0;
+      
+      if (type === 'fixed') {
+        cashbackEarned = value;
+      } else {
+        cashbackEarned = finalPrice * (value / 100);
+      }
     }
     if (cashbackEarned > 0) message += `\n_Você ganhou ${formatCurrency(cashbackEarned)} de cashback nesta compra!_`;
 
@@ -1197,6 +1213,7 @@ export function Menu() {
         onClose={() => setIsLoyaltyModalOpen(false)}
         settings={settings?.loyaltyProgram}
         restaurantPhone={settings?.whatsappNumber}
+        customerOrders={customerData?.totalOrders || 0}
         onParticipate={() => {
           setIsLoyaltyModalOpen(false);
           // TODO: Implement participate logic (e.g. login/auth)
@@ -1345,17 +1362,23 @@ export function Menu() {
                   <Gift className="text-amber-600" size={24} />
                   <h4 className="font-bold text-amber-800">Programa de Fidelidade</h4>
                 </div>
-                <p className="text-amber-700/80 text-sm leading-relaxed">
-                  Seu pedido será contabilizado no programa de fidelidade após a conclusão. Continue pedindo para ganhar recompensas!
+                <p className="text-amber-700/80 text-sm leading-relaxed mb-3">
+                  {customerData?.totalOrders 
+                    ? `Parabéns! Com este pedido você completou ${customerData.totalOrders + 1} pedidos em nossa loja.`
+                    : "Este foi o seu primeiro pedido! Comece a acumular para ganhar prêmios incríveis."}
                 </p>
+                <div className="flex items-center justify-between bg-white/50 p-3 rounded-xl border border-amber-200">
+                  <span className="text-xs font-bold text-amber-800 uppercase">Seu Status</span>
+                  <span className="text-sm font-black text-amber-600">{(customerData?.totalOrders || 0) + 1} PEDIDOS</span>
+                </div>
                 <button 
                   onClick={() => {
                     setShowSuccessModal(false);
                     setIsLoyaltyModalOpen(true);
                   }}
-                  className="mt-4 text-sm font-bold text-amber-600 hover:text-amber-700 underline underline-offset-4"
+                  className="mt-4 w-full py-2 text-sm font-bold text-amber-600 hover:text-amber-700 border-2 border-amber-200 rounded-xl hover:bg-amber-100 transition-all"
                 >
-                  Ver meus benefícios
+                  Ver próximos prêmios
                 </button>
               </div>
             )}

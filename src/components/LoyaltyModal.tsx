@@ -8,9 +8,10 @@ interface LoyaltyModalProps {
   onParticipate: () => void;
   settings?: LoyaltySettings;
   restaurantPhone?: string;
+  customerOrders?: number;
 }
 
-export function LoyaltyModal({ isOpen, onClose, onParticipate, settings, restaurantPhone }: LoyaltyModalProps) {
+export function LoyaltyModal({ isOpen, onClose, onParticipate, settings, restaurantPhone, customerOrders = 0 }: LoyaltyModalProps) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -105,7 +106,29 @@ export function LoyaltyModal({ isOpen, onClose, onParticipate, settings, restaur
           
           <p className="text-zinc-600 text-lg mb-10 max-w-xs mx-auto leading-relaxed">
             Ganhe prêmios após seu {milestonesText} pedido
+            {settings?.cashbackEnabled && (
+              <span className="block mt-2 text-amber-600 font-bold">
+                + {settings.cashbackType === 'percentage' 
+                  ? `${settings.cashbackValue ?? settings.cashbackPercentage}% de Cashback` 
+                  : `R$ ${(settings.cashbackValue ?? settings.cashbackPercentage ?? 0).toFixed(2)} de Cashback`} em cada pedido!
+              </span>
+            )}
           </p>
+
+          {customerOrders > 0 && (
+            <div className="mb-10 w-full max-w-xs bg-zinc-50 rounded-2xl p-6 border border-zinc-100">
+              <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-3">Seu Progresso</p>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xl font-bold shadow-sm">
+                  {customerOrders}
+                </div>
+                <div className="text-left">
+                  <p className="text-zinc-900 font-bold">Pedidos realizados</p>
+                  <p className="text-zinc-500 text-xs">Continue pedindo para ganhar!</p>
+                </div>
+              </div>
+            </div>
+          )}
           
           <button 
             onClick={onParticipate}
@@ -131,24 +154,34 @@ export function LoyaltyModal({ isOpen, onClose, onParticipate, settings, restaur
             </h3>
 
             <div className="space-y-6 relative before:absolute before:inset-y-0 before:left-6 before:w-px before:bg-zinc-200">
-              {sortedBenefits.map((benefit, index) => (
-                <div key={benefit.id} className="relative flex gap-6">
-                  {/* Icon / Timeline dot */}
-                  <div className="relative z-10 w-12 h-12 rounded-full bg-white border-4 border-zinc-50 flex items-center justify-center shrink-0 shadow-sm">
-                    <Gift size={20} className="text-zinc-400" />
+              {sortedBenefits.map((benefit, index) => {
+                const isReached = customerOrders >= benefit.milestone;
+                return (
+                  <div key={benefit.id} className="relative flex gap-6">
+                    {/* Icon / Timeline dot */}
+                    <div className={`relative z-10 w-12 h-12 rounded-full border-4 flex items-center justify-center shrink-0 shadow-sm transition-colors ${isReached ? 'bg-zinc-900 border-zinc-900 text-white' : 'bg-white border-zinc-50 text-zinc-400'}`}>
+                      {isReached ? <Star size={20} fill="currentColor" /> : <Gift size={20} />}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className={`flex-1 p-5 rounded-2xl border transition-all ${isReached ? 'bg-white border-zinc-900 shadow-md scale-[1.02]' : 'bg-white border-zinc-100 shadow-sm hover:shadow-md'}`}>
+                      <div className="flex justify-between items-start mb-1">
+                        <p className={`font-bold leading-relaxed ${isReached ? 'text-zinc-900' : 'text-zinc-800'}`}>
+                          {benefit.title}
+                        </p>
+                        {isReached && (
+                          <span className="bg-zinc-900 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider ml-2 shrink-0">
+                            Resgatado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-zinc-500 text-sm">
+                        Ganhe após o {benefit.milestone}º pedido
+                      </p>
+                    </div>
                   </div>
-                  
-                  {/* Content */}
-                  <div className="flex-1 bg-white p-5 rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md transition-shadow">
-                    <p className="text-zinc-800 font-medium leading-relaxed mb-2">
-                      {benefit.title}
-                    </p>
-                    <p className="text-zinc-500 text-sm">
-                      Ganhe após o {benefit.milestone}º pedido
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <p className="text-center text-zinc-400 text-sm italic mt-8">
